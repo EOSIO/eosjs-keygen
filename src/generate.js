@@ -1,12 +1,11 @@
 const assert = require('assert')
 
 const {PrivateKey} = require('eosjs-ecc')
+const validate = require('./validate')
 
 module.exports = {
   generateMasterKeys,
-  getEosKeys,
-  validPath,
-  keyType,
+  getEosKeys
 }
 
 /**
@@ -31,7 +30,7 @@ function generateMasterKeys(cpuEntropyBits) {
   Login, use this to derive same keyset obtained from generateMasterKeys..
 */
 function getEosKeys(masterPrivateKey) {
-  checkMasterPrivateKey(masterPrivateKey)
+  validate.checkMasterPrivateKey(masterPrivateKey)
   return genKeys(PrivateKey(masterPrivateKey.substring(2)))
 }
 
@@ -53,48 +52,3 @@ function genKeys(masterPrivateKey) {
     }
   }
 }
-
-/**
-  Static validation of a path.  Protect against common mistakes.
-
-  @example assert.doesNotThrow(() => validPath('owner'))
-  @example assert.throws(() => validPath('active'), /Active is a child key of owner/)
-  @example assert.doesNotThrow(() => validPath('owner/active'))
-  @example assert.doesNotThrow(() => validPath('myaccount'))
-  @example assert.doesNotThrow(() => validPath('myaccount/mypermission'))
-*/
-function validPath(path) {
-  assert.equal(typeof path, 'string', 'path')
-  assert(path !== 'active', 'Active is a child key of owner.  Try: owner/active')
-  assert(path.indexOf(' ') === -1, 'remove spaces')
-  assert(path[0] !== '/', 'path should not start with a slash')
-  assert(path[path.length - 1] !== '/', 'path should not end with a slash')
-  assert(!/[A-Z]/.test(path), 'path should not have uppercase letters')
-}
-
-/**
-  @return {boolean} - static validation of the master key
-*/
-function checkMasterPrivateKey(masterPrivateKey) {
-  try {
-    checkMasterPrivateKeyOrThrow(masterPrivateKey)
-    return true
-  } catch(e) {
-    return false
-  }
-}
-
-function checkMasterPrivateKeyOrThrow(masterPrivateKey) {
-  assert(typeof masterPrivateKey === 'string', 'invalid master private key')
-  assert(/^PW/.test(masterPrivateKey), 'invalid master private key')
-  assert(PrivateKey.isWif(masterPrivateKey.substring(2)), 'invalid master private key')
-}
-
-function keyType(key) {
-  return isMasterKey(key) ? 'master' :
-    PrivateKey.isWif(key) ? 'wif' :
-    null
-}
-
-const isMasterKey = key =>
-  /^PW/.test(key) && key.length > 2 && PrivateKey.isWif(key.substring(2))

@@ -22,26 +22,10 @@ describe('Generate', () => {
     checkKeySet(keys)
   })
 
-  it('generateMasterKeys', () => {
+  it('getEosKeys', () => {
     const testPrivate = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
     const keys = gen.getEosKeys(testPrivate)
     checkKeySet(keys)
-  })
-
-  it('validPath', () => {
-    assert.doesNotThrow(() => gen.validPath('owner'))
-    assert.doesNotThrow(() => gen.validPath('owner'))
-    assert.throws(() => gen.validPath('active'), /Active is a child key of owner/)
-    assert.doesNotThrow(() => gen.validPath('owner/active'))
-    assert.doesNotThrow(() => gen.validPath('myaccount'))
-    assert.doesNotThrow(() => gen.validPath('myaccount/mypermission'))
-  })
-
-  it('keyType', () => {
-    const testPrivate = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
-    assert.equal('master', gen.keyType(testPrivate))
-    assert.equal('wif', gen.keyType(testPrivate.substring(2)))
-    assert.equal(null, gen.keyType(testPrivate.substring(3)))
   })
 
 })
