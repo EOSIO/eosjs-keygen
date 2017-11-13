@@ -1,0 +1,45 @@
+{
+  "name": "eosjs-keygen",
+  "version": "1.0.0",
+  "description": "General purpose library for private key storage and key management.",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "mocha src/*.test.js",
+    "coverage": "istanbul cover _mocha -- -R spec src/*.test.js",
+    "coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/.bin/coveralls",
+    "prepublish": "node_modules/babel-cli/bin/babel.js src --out-dir lib",
+    "browserify": "mkdir -p dist && browserify -o dist/eosjs-keygen.js -s KeyGen src/index.js",
+    "build": "npm run prepublish && npm run browserify"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EOSIO/eosjs-keygen.git"
+  },
+  "keywords": [
+    "EOS",
+    "Blockchain"
+  ],
+  "author": "jamesc",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/EOSIO/eosjs-keygen/issues"
+  },
+  "homepage": "https://github.com/EOSIO/eosjs-keygen#readme",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "browserify": "^14.4.0",
+    "coveralls": "^2.13.1",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.4.2"
+  },
+  "dependencies": {
+    "eosjs-ecc": "^1.5.1"
+  },
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  }
+}
