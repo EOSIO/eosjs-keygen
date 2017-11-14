@@ -1,6 +1,6 @@
 const assert = require('assert')
 
-const {PrivateKey} = require('eosjs-ecc')
+const {PrivateKey, PublicKey} = require('eosjs-ecc')
 
 module.exports = {
   keyType,
@@ -14,25 +14,39 @@ const isMasterKey = key =>
 function keyType(key) {
   return isMasterKey(key) ? 'master' :
     PrivateKey.isWif(key) ? 'wif' :
+    PublicKey.fromString(key) != null ? 'pubkey' :
     null
 }
 
 /**
   Static validation of a path.  Protect against common mistakes.
 
-  @example assert.doesNotThrow(() => path('owner'))
-  @example assert.throws(() => path('active'), /Active is a child key of owner/)
-  @example assert.doesNotThrow(() => path('owner/active'))
-  @example assert.doesNotThrow(() => path('myaccount'))
-  @example assert.doesNotThrow(() => path('myaccount/mypermission'))
+  Valid paths:
+  * master
+  * owner
+  * owner/active
+  * myaccount/mypermission
+
+  @see validate.test.js Validate, path
 */
 function path(path) {
   assert.equal(typeof path, 'string', 'path')
-  assert(path !== 'active', 'Active is a child key of owner.  Try: owner/active')
+  assert(path !== '', 'path should not be empty')
   assert(path.indexOf(' ') === -1, 'remove spaces')
-  assert(path[0] !== '/', 'path should not start with a slash')
-  assert(path[path.length - 1] !== '/', 'path should not end with a slash')
+  assert(path.indexOf('\\') === -1, 'use forward slash')
+  assert(path[0] !== '/', 'remove leading slash')
+  assert(path[path.length - 1] !== '/', 'remove ending slash')
   assert(!/[A-Z]/.test(path), 'path should not have uppercase letters')
+
+  const el = Array.from(path.split('/'))
+  assert(!el.includes('master') || path === 'master',
+    'master is an implied root to the owner key, omit master from your path')
+
+  assert(!el.includes('active') || path === 'owner/active',
+    'active is implied or a child of owner, ex: myaccount/mypermission or owner/active')
+
+  assert(!el.includes('owner') || el.indexOf('owner') === 0,
+    'owner is always the root')
 }
 
 /**
