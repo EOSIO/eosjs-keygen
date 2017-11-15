@@ -13,12 +13,13 @@ module.exports = Session
 
 /**
   @arg {object} config
-  @arg {Array} config.urlRules - white-list keys (by role) to certain pages
+  @arg {object<minimatch, reSet>} config.urlRules - White-list keys (by role)
+    to certain web pages (by Url pattern).
 
   @example config.urlRules = {
     'owner': 'account_recovery',
     'owner/active': '@[\w\.]+/transfers',
-    'myaccount/[\w\.]+': '@[\w\.]'
+    'myaccount/*': '@[\w\.]+'
   }
 */
 function Session(userId, config = {}) {
@@ -45,12 +46,17 @@ function Session(userId, config = {}) {
   }
 
   /**
-    This should be called on each Url change and before logging in.  The Url is
-    tested with urlRules and may prevent the creation of remove extra private
-    keys that should not exist on the current page.
+    Prevent certain private keys from being available to high-risk pages.
+
+    Call this function:
+    * Before logging in
+    * On each Url change before the page loads
+
+    The Url is tested against config.urlRules and matches may prevent the
+    creation or trigger the removal of extra private keys that should not
+    be exposed to the current page.
 
     @arg {string} url
-
     @example url = 'http://localhost/@myaccount/transfers'
   */
   function currentUrl(url) {

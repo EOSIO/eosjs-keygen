@@ -36,7 +36,8 @@
   },
   "dependencies": {
     "eosjs-ecc": "^1.5.1",
-    "localStorage": "^1.0.3"
+    "localStorage": "^1.0.3",
+    "minimatch": "^3.0.4"
   },
   "babel": {
     "presets": [

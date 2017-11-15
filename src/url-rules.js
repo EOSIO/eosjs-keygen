@@ -5,15 +5,14 @@ module.exports = UrlRules
   Create path and corresponding Url matching regular expressions.  If a path
   matches but the url does not, it will show up in a remove list.
 
-  @arg {object<rePath, reSet>} rules
+  @arg {object<minimatch, reSet>} rules
 
   @example UrlRules({
     'owner': 'account_recovery',
     'owner/active': '@[\w\.]+/transfers',
-    'myaccount/[\w\.]+': '@[\w\.]'
+    'myaccount/**': '@[\w\.]'
   })
 */
-
 function UrlRules(rules) {
   const urlRules = rules.map(
     ([path, urlPattern]) => createUrlRule(path, urlPattern)
