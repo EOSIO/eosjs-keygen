@@ -43,7 +43,6 @@ function keyPaths(parentPrivateKey, accountPermissions, selector = () => true) {
   
 }
 
-
 /** @private */
 function genKeys(masterPrivateKey) {
   const ownerPrivate = masterPrivateKey.getChildKey('owner')

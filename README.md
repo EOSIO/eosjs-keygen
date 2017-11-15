@@ -7,11 +7,7 @@ General purpose library for private key storage and key management.
 
 ### Usage
 
-```javascript
-KeyGen = require('eosjs-keygen') // Or KeyGen = require('./src')
-keyGen = KeyGen()
-// ...
-```
+[API](./API.md)
 
 # Development
 

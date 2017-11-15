@@ -5,30 +5,44 @@ const KeyStore = require('./keystore')
 const UrlRules = require('./url-rules')
 const validate = require('./validate')
 
-/**
-  Provides key management such as local storage and session with additional
-  security features such as access levels and timeout.
-*/
 module.exports = Session
 
 /**
-  @arg {object} config
-  @arg {object<minimatch, reSet>} config.urlRules - White-list keys (by role)
-    to certain web pages (by Url pattern).
+  Provides private key management and storage.
 
-  @example config.urlRules = {
+  @arg {string} userId - An identifier for the user (stable hash for a user).
+    Make sure the id is stored externally before it is used here.
+
+  @arg {object} [config]
+  @arg {number} [config.timeout = 30] - minutes
+  @arg {Object<minimatch, RegexpSet>} [config.urlRules] - Specify which type
+  of private key will be available on certain pages of the application.
+
+@example
+```js
+Session = require('eosjs-keygen')
+
+config = {
+  timeout: 30,
+  urlRules: {
     'owner': 'account_recovery',
-    'owner/active': '@[\w\.]+/transfers',
-    'myaccount/*': '@[\w\.]+'
+    'owner/active': '@${accountName}/transfers',
+    '${accountName}/**': '@${accountName}'
   }
+}
+
+session = Session('userid', config)
+
+session.login(...)
+```
 */
 function Session(userId, config = {}) {
   assert.equal('string', typeof userId, 'userId')
   assert.equal('object', typeof config, 'config')
 
   const configDefaults = {
-    timeout: 30 * min,
-    urlRules: {}
+    urlRules: {},
+    timeout: 30
   }
 
   config = Object.assign({}, configDefaults, config)
@@ -38,23 +52,15 @@ function Session(userId, config = {}) {
   let lastUrl
 
   /**
-    Removes any saved logings and clears any keys RAM.  Call only when the user
-    chooses "logout."  Do not call when the application exits.
-  */
-  function logout() {
-    keyStore.wipeUser()
-  }
-
-  /**
+    @private
     Prevent certain private keys from being available to high-risk pages.
 
     Call this function:
-    * Before logging in
-    * On each Url change before the page loads
+    - Before logging in
+    - On each Url change before the page loads
 
-    The Url is tested against config.urlRules and matches may prevent the
-    creation or trigger the removal of extra private keys that should not
-    be exposed to the current page.
+    The Url is tested against config.urlRules and matches may prevent that
+    private key from sticking around.
 
     @arg {string} url
     @example url = 'http://localhost/@myaccount/transfers'
@@ -71,24 +77,24 @@ function Session(userId, config = {}) {
     may be called to add additional keys which were removed as a result of Url
     navigation or from calling logout.
 
-    @arg {string|Buffer} parentPrivateKey - Master password, active, owner, or
-      permission key.  Required unless continuing an interrupted sign-up.
+    @arg {string} accountName - Blockchain account.name (example: myaccount)
 
-    @arg {object} [accountPermissions] - Permissions object obtained from Eos
-      blockchain via get_account.  Always provide this if it is avalable, additional
-      validation and access level setting is performed.  This allows the keyStore
+    @arg {parentPrivateKey} parentPrivateKey - Master password (masterPrivateKey),
+      active, owner, or other permission key.
+
+    @arg {accountPermissions} accountPermissions - Permissions object from Eos
+      blockchain via get_account.  This is used to validate the parentPrivateKey
+      and derive additional permission keys.  This allows this session
       to detect incorrect passwords early before trying to sign a transaction.
-      External changes to the blockchain account permissions are picked up in the
-      next keyStore constructed with the updated object.
-
-      @see Chain API `get_account => account.account_permissions`
+      See Chain API `get_account => account.permissions`.
 
     @arg {Array<minimatch>} [saveLoginsByPath] - These permissions will be
       saved to disk.  An exception is thrown if a master, owner or active key
-      save is attempted. @example ['myaccount/**']
+      save is attempted. (example: ['myaccount/**', ..])
   */
-  function login(parentPrivateKey, accountPermissions, saveLoginsByPath = []) {
+  function login(accountName, parentPrivateKey, accountPermissions, saveLoginsByPath = []) {
     assert(lastUrl != null, 'call currentUrl first')
+    
 
     // TODO design here is still work-in-progress
 
@@ -108,13 +114,21 @@ function Session(userId, config = {}) {
   }
 
   /**
+    Removes any saved keys on disk and clears keys in memory.  Call only when
+    the user chooses "logout."  Do not call when the application exits.
+  */
+  function logout() {
+    keyStore.wipeUser()
+  }
+
+  /**
     @return {number} 0 (expired) or milliseconds until expire
   */
   function timeUntilExpire() {
     return 0
   }
 
-  /** Keep alive (prevent expiration).  Optimized for multiple calls. */
+  /** Keep alive (prevent expiration). */
   function keepAlive() {
     
   }
@@ -124,5 +138,3 @@ function Session(userId, config = {}) {
     timeUntilExpire, keepAlive
   }
 }
-
-const sec = 1000, min = 60 * sec//, hour = 60 * min

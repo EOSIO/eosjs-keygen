@@ -13,6 +13,9 @@ const validate = require('./validate')
 */
 module.exports = KeyStore
 
+/**
+  @namespace session.keyStore
+*/
 function KeyStore(userId) {
   assert.equal('string', typeof userId, 'userId')
 

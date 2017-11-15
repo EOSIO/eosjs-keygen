@@ -5,7 +5,7 @@ module.exports = UrlRules
   Create path and corresponding Url matching regular expressions.  If a path
   matches but the url does not, it will show up in a remove list.
 
-  @arg {object<minimatch, reSet>} rules
+  @arg {Object<minimatch, RegexpSet>} rules
 
   @example UrlRules({
     'owner': 'account_recovery',
@@ -38,46 +38,6 @@ function UrlRules(rules) {
 }
 
 
-/**
-  A valid regular expression string or a regular expression object.
-
-  If a string is provided it is converted to a RegExp by inspecting and
-  optionally adding common suffixes and prefixes.
-
-  If a RegExp object is provided, it is used without modification.  
-
-  @typedef {string|RegExp} reStr
-*/
-
-/**
-  @typedef {reStr|Array<reStr>} reSet
-*/
-
-/**
-  A string is converted to a full path matching string.
-  @typedef {reStr} rePath
-
-  @example path = new RegExp('^' + path + '$')
-*/
-
-/**
-  If a string is provided the following concatenation occurs:
-  * If it does not sart with ^, root with http or https then any domain
-  * Add your regexp
-  * If it does not end with $, allow any valid Url suffix
-  @typedef {reStr} reSet
-
-  @example {
-    const prefix = re.charAt(0) === '^' ? '' : '^https?://[^/]+/'
-    const suffix = re.charAt(re.length - 1) === '$' ? '' : '([/\?#].*)?$'
-    return new RegExp(prefix + re + suffix, 'i')
-  }
-*/
-
-
-/**
-  @return {[RegExp, [RegExp]]} - [path, [urlMatchers]]
-*/
 function createUrlRule(path, urlPattern) {
   if(typeof path === 'string') {
     validate.path(path)
