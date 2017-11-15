@@ -64,14 +64,35 @@ function Session(userId, config = {}) {
     Creates private keys and saves them in the keystore for use on demand.  This
     may be called to add additional keys which were removed as a result of Url
     navigation or from calling logout.
+
+    @arg {string|Buffer} parentPrivateKey - Master password, active, owner, or
+      permission key.  Required unless continuing an interrupted sign-up.
+
+    @arg {object} [accountPermissions] - Permissions object obtained from Eos
+      blockchain via get_account.  Always provide this if it is avalable, additional
+      validation and access level setting is performed.  This allows the keyStore
+      to detect incorrect passwords early before trying to sign a transaction.
+      External changes to the blockchain account permissions are picked up in the
+      next keyStore constructed with the updated object.
+
+      @see Chain API `get_account => account.account_permissions`
+
+    @arg {Array<minimatch>} [saveLoginsByPath] - These permissions will be
+      saved to disk.  An exception is thrown if a master, owner or active key
+      save is attempted. @example ['myaccount/**']
   */
-  function login(parentPrivateKey, accountPermissions) {
+  function login(parentPrivateKey, accountPermissions, saveLoginsByPath = []) {
     assert(lastUrl != null, 'call currentUrl first')
+
+    // TODO design here is still work-in-progress
+
+    // const paths = generate.accountPermissionPaths(accountPermissions)
+    // const purges = urlRules.check(paths, lastUrl)
+    
     const keys = generate.keyPaths(
       parentPrivateKey,
       accountPermissions,
       paths => {
-        const purges = urlRules.check(paths, lastUrl)
         return paths.filter(path => !purges.contains(path))
       }
     )
@@ -93,7 +114,8 @@ function Session(userId, config = {}) {
   }
 
   return {
-    timeUntilExpire, keepAlive, checkUrl
+    logout, currentUrl, login,
+    timeUntilExpire, keepAlive
   }
 }
 

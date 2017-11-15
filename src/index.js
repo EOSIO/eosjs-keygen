@@ -34,18 +34,57 @@ module.exports = Session
 */
 
 /**
-  Spending key 
-
+  Spending key
   @typedef {wif} active
 */
 
 /**
   Key derviation path
+  @typedef {string} path
 
   @example 'master'
   @example 'owner'
   @example 'owner/active'
   @example 'myaccount/mypermission'
 
-  @typedef {string} path
+*/
+
+/**
+  Permissions object from Eos blockchain obtained via get_account.
+  See chain API get_account => account.account_permissions.
+
+  @typedef {object} accountPermissions
+
+  @example const accountPermissions = [{
+    name: 'active',
+    parent: 'owner',
+    required_auth: {
+      threshold: 1,
+      keys: [{
+          key: 'EOS78Cs5HPKY7HKHrSMnR76uj7yeajPuNwSH1Fsria3sJuufwE3Zd',
+          weight: 1
+        }
+      ],
+      accounts: []
+    }
+  },{
+    name: 'owner',
+    parent: '',
+    required_auth: {
+      threshold: 1,
+      keys: [{
+          key: 'EOS78Cs5HPKY7HKHrSMnR76uj7yeajPuNwSH1Fsria3sJuufwE3Zd',
+          weight: 1
+        }
+      ],
+      accounts: []
+    }
+  }]
+*/
+
+/**
+  Glob matching expressions.
+  @see https://www.npmjs.com/package/minimatch
+  @typedef {string} minimatch
+  @example 'myaccount/**'
 */

@@ -32,38 +32,10 @@ function generateMasterKeys(cpuEntropyBits) {
   @arg {string|Buffer} parentPrivateKey - Master password, active, owner, or
     other key in the account's permission.
 
-  @arg {object} accountPermissions - Permissions object from Eos blockchain
-    obtained via get_account. See chain API get_account =>
-    account.account_permissions.
+  @arg {accountPermissions} - blockchain account.permissions (see typedef in ./index.js)
 
   @arg {function} selector(path) - Return `false` to skip a key path (public
     key calculation is expensive).
-
-  @example accountPermissions: [{
-    name: 'active',
-    parent: 'owner',
-    required_auth: {
-      threshold: 1,
-      keys: [{
-          key: 'EOS78Cs5HPKY7HKHrSMnR76uj7yeajPuNwSH1Fsria3sJuufwE3Zd',
-          weight: 1
-        }
-      ],
-      accounts: []
-    }
-  },{
-    name: 'owner',
-    parent: '',
-    required_auth: {
-      threshold: 1,
-      keys: [{
-          key: 'EOS78Cs5HPKY7HKHrSMnR76uj7yeajPuNwSH1Fsria3sJuufwE3Zd',
-          weight: 1
-        }
-      ],
-      accounts: []
-    }
-  }]
 
   @return {Array<object>} - [{path, wif, pubkey}] or empty array for an invalid login
 */
