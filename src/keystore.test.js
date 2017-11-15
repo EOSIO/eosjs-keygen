@@ -1,12 +1,12 @@
 /* eslint-env mocha */
 const assert = require('assert')
 
-const Store = require('./store')
+const KeyStore = require('./keystore')
 
 describe('Store', () => {
 
   it('wipeAll', () => {
-    Store.wipeAll()
+    KeyStore.wipeAll()
   })
 
 })

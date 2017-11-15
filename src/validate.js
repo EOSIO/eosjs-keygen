@@ -9,11 +9,12 @@ module.exports = {
 }
 
 const isMasterKey = key =>
-  /^PW/.test(key) && key.length > 2 && PrivateKey.isWif(key.substring(2))
+  /^PW/.test(key) && PrivateKey.isWif(key.substring(2))
 
 function keyType(key) {
   return isMasterKey(key) ? 'master' :
     PrivateKey.isWif(key) ? 'wif' :
+    PrivateKey.isPrivateKey(key) ? 'privateKey' :
     PublicKey.fromString(key) != null ? 'pubkey' :
     null
 }
@@ -21,11 +22,10 @@ function keyType(key) {
 /**
   Static validation of a path.  Protect against common mistakes.
 
-  Valid paths:
-  * master
-  * owner
-  * owner/active
-  * myaccount/mypermission
+  @example path('master')
+  @example path('owner')
+  @example path('owner/active')
+  @example path('myaccount/mypermission')
 
   @see validate.test.js Validate, path
 */

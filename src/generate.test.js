@@ -22,10 +22,10 @@ describe('Generate', () => {
     checkKeySet(keys)
   })
 
-  it('getEosKeys', () => {
-    const testPrivate = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
-    const keys = gen.getEosKeys(testPrivate)
-    checkKeySet(keys)
-  })
+  // it('getEosKeys', () => {
+  //   const testPrivate = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
+  //   const keys = gen.getEosKeys(testPrivate)
+  //   checkKeySet(keys)
+  // })
 
 })
