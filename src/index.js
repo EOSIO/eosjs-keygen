@@ -4,18 +4,27 @@ const Session = require('./session')
 module.exports = Session
 
 /**
-  Master Private Key.  Strong random key used to derive all other key types.
+  Public Key
 
-  @example `PW${wif}`
-  @example PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp
+  @example 'EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV' 
 
-  @typedef {string} masterPrivateKey
+  @typedef {string} pubkey
 */
 
 /**
     [Wallet Import Format](https://en.bitcoin.it/wiki/Wallet_import_format)
+    @example '5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
 
     @typedef {string} wif
+*/
+
+/**
+  Master Private Key.  Strong random key used to derive all other key types.
+
+  @example `PW${wif}`
+  @example 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
+
+  @typedef {string} masterPrivateKey
 */
 
 /**
@@ -39,12 +48,4 @@ module.exports = Session
   @example 'myaccount/mypermission'
 
   @typedef {string} path
-*/
-
-/**
-  EOS Public Key
-
-  @example EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV 
-
-  @typedef {string} pubkey
 */

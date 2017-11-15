@@ -7,10 +7,13 @@ const validate = require('./validate')
 
 /**
   Rules and storage for private keys.
-*/
-module.exports = Store
 
-function Store(userId) {
+  This keyStore does not query the blockchain or any external services.  Removing
+  keys here does not affect the blockchain.
+*/
+module.exports = KeyStore
+
+function KeyStore(userId) {
   assert.equal('string', typeof userId, 'userId')
 
   /** @private */
@@ -50,8 +53,8 @@ function Store(userId) {
       keyType === 'privateKey' ? key.toPublic().toString() :
       ecc.privateToPublic(wif)
   
-    const userKeyWif = userStorage.key(userId, 'wif', path)
-    const userKeyPub = userStorage.key(userId, 'pubkey', path)
+    const userKeyWif = userStorage.key(userId, 'kpath', 'wif', path)
+    const userKeyPub = userStorage.key(userId, 'kpath', 'pubkey', path)
 
     userStorage.save(state, userKeyWif, wif)
     userStorage.save(state, userKeyPub, pubkey)
@@ -73,15 +76,36 @@ function Store(userId) {
   function remove(path, keepPublicKey = false) {
     validate.path(path)
 
-    const userKeyWif = userStorage.key(userId, 'wif', path)
+    const userKeyWif = userStorage.key(userId, 'kpath', 'wif', path)
     state[userKeyWif] = null
     localStorage[userKeyWif] = null
 
     if(!keepPublicKey) {
-      const userKeyPub = userStorage.key(userId, 'pubkey', path)
+      const userKeyPub = userStorage.key(userId, 'kpath', 'pubkey', path)
       state[userKeyPub] = null
       localStorage[userKeyPub] = null
     }
+  }
+
+  /**
+    Return paths for all available keys.  An empty Set is used if there are
+    no keys.
+
+    @return {object} {pubkey: Set<pubkey>, wif: Set<wif>}
+  */
+  function getKeyPaths() {
+    const pubkey = new Set()
+    const wif = new Set()
+    userStorage.query(localStorage, [userId, 'kpath'], ([type, path]) => {
+      if(type === 'pubkey') {
+        pubkey.add(path)
+      } else if(type === 'wif') {
+        wif.add(path)
+      } else {
+        console.log('WARN: unknown key type, ' + type)
+      }
+    })
+    return {pubkey, wif}
   }
 
   /**
@@ -93,7 +117,7 @@ function Store(userId) {
   */
   function getPublicKey(path) {
     validate.path(path)
-    const userKeyPub = userStorage.key(userId, 'pubkey', path)
+    const userKeyPub = userStorage.key(userId, 'kpath', 'pubkey', path)
     return state[userKeyPub] ? state[userKeyPub] : localStorage[userKeyPub]
   }
 
@@ -108,36 +132,8 @@ function Store(userId) {
   */
   function getPrivateKey(path) {
     validate.path(path)
-    const userKeyWif = userStorage.key(userId, 'wif', path)
+    const userKeyWif = userStorage.key(userId, 'kpath', 'wif', path)
     return state[userKeyPub] ? state[userKeyPub] : localStorage[userKeyPub]
-  }
-
-  /**
-    @return {Set<string>} paths for all available public keys (or empty array)
-  */
-  function getPublicKeyPaths() {
-    const paths = new Set()
-    userStorage.query(localStorage, [userId, 'pubkey'], ([path]) => {
-      paths.add(path)
-    })
-    userStorage.query(state, [userId, 'pubkey'], ([path]) => {
-      paths.add(path)
-    })
-    return paths
-  }
-
-  /**
-    @return {Set<string>} paths for all available private keys (or empty array)
-  */
-  function getPrivateKeyPaths() {
-    const paths = new Set()
-    userStorage.query(localStorage, [userId, 'wif'], ([path]) => {
-      paths.add(path)
-    })
-    userStorage.query(state, [userId, 'wif'], ([path]) => {
-      paths.add(path)
-    })
-    return paths
   }
 
   /** Erase Session (RAM) keys for this user. */
@@ -169,7 +165,7 @@ function Store(userId) {
 }
 
 /** Erase all traces of this KeyStore (for all users).  */
-Store.wipeAll = function() {
+KeyStore.wipeAll = function() {
   const prefix = userStorage.key()
   for(const key in localStorage) {
     if(key.indexOf(prefix) === 0) {
