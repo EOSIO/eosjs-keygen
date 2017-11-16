@@ -1,7 +1,33 @@
-
+const {PrivateKey, key_utils} = require('eosjs-ecc')
+const generate = require('./generate')
 const Session = require('./session')
 
 module.exports = Session
+
+/**
+  New accounts will call this to generate a new keyset..
+
+  A password manager or backup should save the returned
+  {masterPrivateKey} for later login.
+
+  @arg {number} cpuEntropyBits - Use 0 for fast testing, 128 (default) takes a second
+
+  @return {object}
+  @example
+{
+  masterPrivateKey, // <= place in a password input field (password manager)
+  privateKeys: {owner, active},
+  publicKeys: {owner, active}
+}
+*/
+Session.generateMasterKeys = function(cpuEntropyBits) {
+  return generate.genKeys(PrivateKey.randomKey(cpuEntropyBits))
+}
+
+/**
+  @see addEntropy https://github.com/EOSIO/eosjs-ecc/blob/master/src/key_utils.js
+*/
+Session.addEntropy = (...data) => key_utils.addEntropy(data)
 
 /**
   Public Key (EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV)

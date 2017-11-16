@@ -58,7 +58,7 @@ Provides private key management and storage.
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| userId | <code>string</code> |  | An identifier for the user (stable hash for a user).     Make sure the id is stored externally before it is used here. |
+| userId | <code>string</code> |  | An stable identifier (or hash) for the user. Make   sure the id is stored externally before it is used here.  The Id may   be created before a blockchain account name is available.  An account   name may be assigned later in the login function. |
 | [config] | <code>object</code> |  |  |
 | [config.timeout] | <code>number</code> | <code>30</code> | minutes |
 | [config.urlRules] | <code>Object.&lt;minimatch, RegexpSet&gt;</code> |  | Specify which type   of private key will be available on certain pages of the application. |
@@ -76,20 +76,51 @@ config = {
   }
 }
 
-session = Session('userid', config)
+session = Session('unique_userId', config)
 
 session.login(...)
 ```
 
 * [Session(userId, [config])](#Session)
-    * [~login(accountName, parentPrivateKey, accountPermissions, [saveLoginsByPath])](#Session..login)
-    * [~logout()](#Session..logout)
-    * [~timeUntilExpire()](#Session..timeUntilExpire) ⇒ <code>number</code>
-    * [~keepAlive()](#Session..keepAlive)
+    * _static_
+        * [.generateMasterKeys(cpuEntropyBits)](#Session.generateMasterKeys) ⇒ <code>object</code>
+        * [.addEntropy()](#Session.addEntropy)
+    * _inner_
+        * [~login(accountName, accountPermissions, parentPrivateKey, [saveLoginsByPath])](#Session..login)
+        * [~logout()](#Session..logout)
+        * [~timeUntilExpire()](#Session..timeUntilExpire) ⇒ <code>number</code>
+        * [~keepAlive()](#Session..keepAlive)
 
+<a name="Session.generateMasterKeys"></a>
+
+### Session.generateMasterKeys(cpuEntropyBits) ⇒ <code>object</code>
+New accounts will call this to generate a new keyset..
+
+  A password manager or backup should save the returned
+  {masterPrivateKey} for later login.
+
+**Kind**: static method of [<code>Session</code>](#Session)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| cpuEntropyBits | <code>number</code> | Use 0 for fast testing, 128 (default) takes a second |
+
+**Example**  
+```js
+{
+  masterPrivateKey, // <= place in a password input field (password manager)
+  privateKeys: {owner, active},
+  publicKeys: {owner, active}
+}
+```
+<a name="Session.addEntropy"></a>
+
+### Session.addEntropy()
+**Kind**: static method of [<code>Session</code>](#Session)  
+**See**: addEntropy https://github.com/EOSIO/eosjs-ecc/blob/master/src/key_utils.js  
 <a name="Session..login"></a>
 
-### Session~login(accountName, parentPrivateKey, accountPermissions, [saveLoginsByPath])
+### Session~login(accountName, accountPermissions, parentPrivateKey, [saveLoginsByPath])
 Creates private keys and saves them in the keystore for use on demand.  This
     may be called to add additional keys which were removed as a result of Url
     navigation or from calling logout.
@@ -99,9 +130,9 @@ Creates private keys and saves them in the keystore for use on demand.  This
 | Param | Type | Description |
 | --- | --- | --- |
 | accountName | <code>string</code> | Blockchain account.name (example: myaccount) |
-| parentPrivateKey | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password (masterPrivateKey),       active, owner, or other permission key. |
-| accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | Permissions object from Eos       blockchain via get_account.  This is used to validate the parentPrivateKey       and derive additional permission keys.  This allows this session       to detect incorrect passwords early before trying to sign a transaction.       See Chain API `get_account => account.permissions`. |
-| [saveLoginsByPath] | [<code>Array.&lt;minimatch&gt;</code>](#minimatch) | These permissions will be       saved to disk.  An exception is thrown if a master, owner or active key       save is attempted. (example: ['myaccount/**', ..]) |
+| accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | Permissions object from Eos     blockchain via get_account.  This is used to validate the parentPrivateKey     and derive additional permission keys.  This allows this session     to detect incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
+| parentPrivateKey | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password (masterPrivateKey),     active, owner, or other permission key. |
+| [saveLoginsByPath] | [<code>Array.&lt;minimatch&gt;</code>](#minimatch) | These permissions will be     saved to disk.  An exception is thrown if a master, owner or active key     save is attempted. (example: ['myaccount/**', ..]) |
 
 <a name="Session..logout"></a>
 

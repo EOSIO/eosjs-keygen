@@ -4,27 +4,11 @@ const {PrivateKey} = require('eosjs-ecc')
 const validate = require('./validate')
 
 module.exports = {
-  generateMasterKeys,
+  genKeys,
   keyPaths
 }
 
-/**
-  New accounts will call this to generate a new keyset..
-
-  A password manager or backup should save the returned
-  {masterPrivateKey} for later login via getEosKeys.
-
-  @arg {number} cpuEntropyBits - Use 0 for fast testing, 128 (default) takes a second
-
-  @return {object} {
-    masterPrivateKey, // <= place in a password input field (password manager)
-    privateKeys: {owner, active},
-    publicKeys: {owner, active}
-  }
-*/
-function generateMasterKeys(cpuEntropyBits) {
-  return genKeys(PrivateKey.randomKey(cpuEntropyBits))
-}
+/** @typedef {{path, PrivateKey}} PrivateKeyPath */
 
 /**
   Derive key path / key pairs for a given parent key and a blockchain account.
@@ -34,16 +18,17 @@ function generateMasterKeys(cpuEntropyBits) {
 
   @arg {accountPermissions} - blockchain account.permissions (see typedef in ./index.js)
 
-  @arg {function} selector(path) - Return `false` to skip a key path (public
-    key calculation is expensive).
-
-  @return {Array<object>} - [{path, wif, pubkey}] or empty array for an invalid login
+  @return {Array<PrivateKeyPath>} - Selected keys or empty array for an invalid login
 */
-function keyPaths(parentPrivateKey, accountPermissions, selector = () => true) {
+function keyPaths(accountName, accountPermissions, parentPrivateKey) {
   
 }
 
-/** @private */
+// @arg {function} selector(path) - Return `false` to skip a key path (public
+//   key calculation is expensive).
+
+/**
+*/
 function genKeys(masterPrivateKey) {
   const ownerPrivate = masterPrivateKey.getChildKey('owner')
   const activePrivate = ownerPrivate.getChildKey('active')

@@ -1,7 +1,8 @@
 /* eslint-env mocha */
 const assert = require('assert')
 
-const gen = require('./generate')
+const {PrivateKey} = require('eosjs-ecc')
+const generate = require('./generate')
 
 describe('Generate', () => {
 
@@ -17,8 +18,8 @@ describe('Generate', () => {
     assert.equal('string', typeof keys.publicKeys.active, 'keys.publicKeys.active')
   }
 
-  it('generateMasterKeys', () => {
-    const keys = gen.generateMasterKeys(0)
+  it('keyGen', () => {
+    const keys = generate.genKeys(PrivateKey.randomKey(0))
     checkKeySet(keys)
   })
 

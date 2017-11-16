@@ -10,8 +10,10 @@ module.exports = Session
 /**
   Provides private key management and storage.
 
-  @arg {string} userId - An identifier for the user (stable hash for a user).
-    Make sure the id is stored externally before it is used here.
+  @arg {string} userId - An stable identifier (or hash) for the user. Make
+  sure the id is stored externally before it is used here.  The Id may
+  be created before a blockchain account name is available.  An account
+  name may be assigned later in the login function.
 
   @arg {object} [config]
   @arg {number} [config.timeout = 30] - minutes
@@ -31,7 +33,7 @@ config = {
   }
 }
 
-session = Session('userid', config)
+session = Session('unique_userId', config)
 
 session.login(...)
 ```
@@ -52,49 +54,32 @@ function Session(userId, config = {}) {
   let lastUrl
 
   /**
-    @private
-    Prevent certain private keys from being available to high-risk pages.
-
-    Call this function:
-    - Before logging in
-    - On each Url change before the page loads
-
-    The Url is tested against config.urlRules and matches may prevent that
-    private key from sticking around.
-
-    @arg {string} url
-    @example url = 'http://localhost/@myaccount/transfers'
-  */
-  function currentUrl(url) {
-    lastUrl = url
-    const paths = keyStore.getKeyPaths()
-    const checks = urlRules.check(paths.wif, url)
-    checks.forEach(path => { keyStore.remove(path) })
-  }
-
-  /**
     Creates private keys and saves them in the keystore for use on demand.  This
     may be called to add additional keys which were removed as a result of Url
     navigation or from calling logout.
 
     @arg {string} accountName - Blockchain account.name (example: myaccount)
 
-    @arg {parentPrivateKey} parentPrivateKey - Master password (masterPrivateKey),
-      active, owner, or other permission key.
-
     @arg {accountPermissions} accountPermissions - Permissions object from Eos
-      blockchain via get_account.  This is used to validate the parentPrivateKey
-      and derive additional permission keys.  This allows this session
-      to detect incorrect passwords early before trying to sign a transaction.
-      See Chain API `get_account => account.permissions`.
+    blockchain via get_account.  This is used to validate the parentPrivateKey
+    and derive additional permission keys.  This allows this session
+    to detect incorrect passwords early before trying to sign a transaction.
+    See Chain API `get_account => account.permissions`.
 
-    @arg {Array<minimatch>} [saveLoginsByPath] - These permissions will be
-      saved to disk.  An exception is thrown if a master, owner or active key
-      save is attempted. (example: ['myaccount/**', ..])
-  */
-  function login(accountName, parentPrivateKey, accountPermissions, saveLoginsByPath = []) {
-    assert(lastUrl != null, 'call currentUrl first')
+    @arg {parentPrivateKey} parentPrivateKey - Master password (masterPrivateKey),
+    active, owner, or other permission key.
     
+    @arg {Array<minimatch>} [saveLoginsByPath] - These permissions will be
+    saved to disk.  An exception is thrown if a master, owner or active key
+    save is attempted. (example: ['myaccount/**', ..])
+  */
+  function login(
+    accountName,
+    accountPermissions,
+    parentPrivateKey,
+    saveLoginsByPath = []
+  ) {
+    assert(lastUrl != null, 'call currentUrl first')
 
     // TODO design here is still work-in-progress
 
@@ -131,6 +116,27 @@ function Session(userId, config = {}) {
   /** Keep alive (prevent expiration). */
   function keepAlive() {
     
+  }
+
+  /**
+    @private
+    Prevent certain private keys from being available to high-risk pages.
+
+    Call this function:
+    - Before logging in
+    - On each Url change before the page loads
+
+    The Url is tested against config.urlRules and matches may prevent that
+    private key from sticking around.
+
+    @arg {string} url
+    @example url = 'http://localhost/@myaccount/transfers'
+  */
+  function currentUrl(url) {
+    lastUrl = url
+    const paths = keyStore.getKeyPaths()
+    const checks = urlRules.check(paths.wif, url)
+    checks.forEach(path => { keyStore.remove(path) })
   }
 
   return {

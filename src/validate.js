@@ -14,8 +14,8 @@ const isMasterKey = key =>
 function keyType(key) {
   return isMasterKey(key) ? 'master' :
     PrivateKey.isWif(key) ? 'wif' :
-    PrivateKey.isPrivateKey(key) ? 'privateKey' :
-    PublicKey.fromString(key) != null ? 'pubkey' :
+    PrivateKey.isValid(key) ? 'privateKey' :
+    PublicKey.isValid(key) ? 'pubkey' :
     null
 }
 
