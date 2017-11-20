@@ -16,6 +16,9 @@
 <dd><p><a href="https://en.bitcoin.it/wiki/Wallet_import_format">Wallet Import Format</a>
     (5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp)</p>
 </dd>
+<dt><a href="#PrivateKey">PrivateKey</a> : <code>object</code></dt>
+<dd><p>Private key object from eosjs-ecc.</p>
+</dd>
 <dt><a href="#masterPrivateKey">masterPrivateKey</a> : <code>string</code></dt>
 <dd><p>Master Private Key.  Strong random key used to derive all other key types.
   (PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp, &#39;PW&#39; + wif)</p>
@@ -30,14 +33,14 @@
 <dd><p>Master private key or one of its derived private keys.</p>
 </dd>
 <dt><a href="#path">path</a> : <code>string</code></dt>
-<dd><p>Key derviation path (<code>master</code>, <code>owner</code>, <code>owner/active</code>, <code>myaccount/mypermission</code>, ..)</p>
+<dd><p>Key derviation path (<code>master</code>, <code>owner</code>, <code>owner/active</code>, <code>active/mypermission</code>, ..)</p>
 </dd>
 <dt><a href="#accountPermissions">accountPermissions</a> : <code>object</code></dt>
-<dd><p>Permissions object from Eos blockchain obtained via get_account.
-  See chain API get_account =&gt; account.permissions.</p>
+<dd><p>Signing Keys and(or) Accounts each having a weight that when matched in
+  the signatures should accumulate to meet or exceed the auth&#39;s total threshold.</p>
 </dd>
 <dt><a href="#minimatch">minimatch</a> : <code>string</code></dt>
-<dd><p>Glob matching expressions (<code>myaccount/*</code>, <code>myaccount/**</code>).</p>
+<dd><p>Glob matching expressions (<code>active/**</code>, <code>owner/*</code>).</p>
 </dd>
 <dt><a href="#RegMatch">RegMatch</a> : <code>string</code> | <code>RegExp</code></dt>
 <dd><p>A valid regular expression string or a regular expression object. If a string
@@ -72,7 +75,7 @@ config = {
   urlRules: {
     'owner': 'account_recovery',
     'owner/active': '@${accountName}/transfers',
-    '${accountName}/**': '@${accountName}'
+    'active/**': '@${accountName}'
   }
 }
 
@@ -103,7 +106,7 @@ New accounts will call this to generate a new keyset..
 
 | Param | Type | Description |
 | --- | --- | --- |
-| cpuEntropyBits | <code>number</code> | Use 0 for fast testing, 128 (default) takes a second |
+| cpuEntropyBits | <code>number</code> | Use 0 for fast testing, 128 (default) takes a   second |
 
 **Example**  
 ```js
@@ -126,13 +129,17 @@ Creates private keys and saves them in the keystore for use on demand.  This
     navigation or from calling logout.
 
 **Kind**: inner method of [<code>Session</code>](#Session)  
+**Throws**:
+
+- <code>Error</code> 'invalid login'
+
 
 | Param | Type | Description |
 | --- | --- | --- |
 | accountName | <code>string</code> | Blockchain account.name (example: myaccount) |
 | accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | Permissions object from Eos     blockchain via get_account.  This is used to validate the parentPrivateKey     and derive additional permission keys.  This allows this session     to detect incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
 | parentPrivateKey | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password (masterPrivateKey),     active, owner, or other permission key. |
-| [saveLoginsByPath] | [<code>Array.&lt;minimatch&gt;</code>](#minimatch) | These permissions will be     saved to disk.  An exception is thrown if a master, owner or active key     save is attempted. (example: ['myaccount/**', ..]) |
+| [saveLoginsByPath] | [<code>Array.&lt;minimatch&gt;</code>](#minimatch) | These permissions will be     saved to disk.  An exception is thrown if a master, owner or active key     save is attempted. (example: ['**', ..]). A timeout will not     expire, logout to remove. |
 
 <a name="Session..logout"></a>
 
@@ -145,11 +152,13 @@ Removes any saved keys on disk and clears keys in memory.  Call only when
 
 ### Session~timeUntilExpire() ⇒ <code>number</code>
 **Kind**: inner method of [<code>Session</code>](#Session)  
-**Returns**: <code>number</code> - 0 (expired) or milliseconds until expire  
+**Returns**: <code>number</code> - 0 (expired), null, or milliseconds until expire  
 <a name="Session..keepAlive"></a>
 
 ### Session~keepAlive()
-Keep alive (prevent expiration).
+Keep alive (prevent expiration).  Called automatically if Url navigation
+    happens or keys are obtained from the keyStore.  It may be necessary
+    to call this manually.
 
 **Kind**: inner method of [<code>Session</code>](#Session)  
 <a name="pubkey"></a>
@@ -163,6 +172,12 @@ Public Key (EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV)
 ## wif : <code>string</code>
 [Wallet Import Format](https://en.bitcoin.it/wiki/Wallet_import_format)
     (5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp)
+
+**Kind**: global typedef  
+<a name="PrivateKey"></a>
+
+## PrivateKey : <code>object</code>
+Private key object from eosjs-ecc.
 
 **Kind**: global typedef  
 <a name="masterPrivateKey"></a>
@@ -193,20 +208,38 @@ Master private key or one of its derived private keys.
 <a name="path"></a>
 
 ## path : <code>string</code>
-Key derviation path (`master`, `owner`, `owner/active`, `myaccount/mypermission`, ..)
+Key derviation path (`master`, `owner`, `owner/active`, `active/mypermission`, ..)
 
 **Kind**: global typedef  
 <a name="accountPermissions"></a>
 
 ## accountPermissions : <code>object</code>
-Permissions object from Eos blockchain obtained via get_account.
-  See chain API get_account => account.permissions.
+Signing Keys and(or) Accounts each having a weight that when matched in
+  the signatures should accumulate to meet or exceed the auth's total threshold.
 
 **Kind**: global typedef  
 **Example**  
 ```js
+required_auth: {
+  threshold: 1,
+  keys: [{
+      key: 'EOS78Cs5HPKY7HKHrSMnR76uj7yeajPuNwSH1Fsria3sJuufwE3Zd',
+      weight: 1
+    }
+  ],
+  accounts: []
+}
+
+/**
+  Permissions object from Eos blockchain obtained via get_account.
+  See chain API get_account => account.permissions.
+
+  
+```
+**Example**  
+```js
 const accountPermissions = [{
-  name: 'active',
+  perm_name: 'active',
   parent: 'owner',
   required_auth: {
     threshold: 1,
@@ -218,7 +251,19 @@ const accountPermissions = [{
     accounts: []
   }
 },{
-  name: 'owner',
+  perm_name: 'mypermission',
+  parent: 'active',
+  required_auth: {
+    threshold: 1,
+    keys: [{
+        key: 'EOS78Cs5HPKY7HKHrSMnR76uj7yeajPuNwSH1Fsria3sJuufwE3Zd',
+        weight: 1
+      }
+    ],
+    accounts: []
+  }
+},{
+  perm_name: 'owner',
   parent: '',
   required_auth: {
     threshold: 1,
@@ -234,7 +279,7 @@ const accountPermissions = [{
 <a name="minimatch"></a>
 
 ## minimatch : <code>string</code>
-Glob matching expressions (`myaccount/*`, `myaccount/**`).
+Glob matching expressions (`active/**`, `owner/*`).
 
 **Kind**: global typedef  
 **See**: https://www.npmjs.com/package/minimatch  

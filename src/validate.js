@@ -22,10 +22,9 @@ function keyType(key) {
 /**
   Static validation of a path.  Protect against common mistakes.
 
-  @example path('master')
   @example path('owner')
   @example path('owner/active')
-  @example path('myaccount/mypermission')
+  @example path('active/mypermission')
 
   @see validate.test.js Validate, path
 */
@@ -39,14 +38,19 @@ function path(path) {
   assert(!/[A-Z]/.test(path), 'path should not have uppercase letters')
 
   const el = Array.from(path.split('/'))
-  assert(!el.includes('master') || path === 'master',
-    'master is an implied root to the owner key, omit master from your path')
 
-  assert(!el.includes('active') || path === 'owner/active',
-    'active is implied or a child of owner, ex: myaccount/mypermission or owner/active')
+  const unique = new Set()
+  el.forEach(e => {unique.add(e)})
+  assert(unique.size === el.length, 'duplicate path element')
+
+  assert(el[0] === 'owner' || el[0] === 'active',
+    'path should start with owner/ or active/')
 
   assert(!el.includes('owner') || el.indexOf('owner') === 0,
     'owner is always the root')
+
+  assert(!el.includes('active') || el.indexOf('active') === 0 ||
+    el.indexOf('active') === 1, 'active is always first or second')
 }
 
 /**

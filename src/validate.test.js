@@ -6,17 +6,15 @@ const validate = require('./validate')
 describe('Validate', () => {
 
   it('path', () => {
-    validate.path('master') // better error than doesNotThrow
-    assert.doesNotThrow(() => validate.path('master'))
+    validate.path('owner') // better error than doesNotThrow
     assert.doesNotThrow(() => validate.path('owner'))
     assert.doesNotThrow(() => validate.path('owner/active'))
-    assert.doesNotThrow(() => validate.path('owner/myaccount/mypermission'))
-    assert.doesNotThrow(() => validate.path('myaccount'))
-    assert.doesNotThrow(() => validate.path('myaccount/mypermission'))
-    assert.throws(() => validate.path('active'), /active is implied or a child of owner/)
-    assert.throws(() => validate.path('active/mykey'), /active is implied/)
-    assert.throws(() => validate.path('master/owner'), /master is an implied root/)
-    assert.throws(() => validate.path('myaccount/owner'), /owner is always the root/)
+    assert.doesNotThrow(() => validate.path('active/mypermission'))
+    assert.doesNotThrow(() => validate.path('active'))
+    assert.doesNotThrow(() => validate.path('active/mykey'))
+    assert.throws(() => validate.path('active/mykey/active'), /duplicate/)
+    assert.throws(() => validate.path('active/owner'), /owner is always the root/)
+    assert.throws(() => validate.path('owner/mykey/active'), /active is always first or second/)
   })
 
   it('keyType', () => {

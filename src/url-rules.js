@@ -10,16 +10,17 @@ module.exports = UrlRules
   @example UrlRules({
     'owner': 'account_recovery',
     'owner/active': '@[\w\.]+/transfers',
-    'myaccount/**': '@[\w\.]'
+    'active/**': '@[\w\.]'
   })
 */
 function UrlRules(rules) {
-  const urlRules = rules.map(
-    ([path, urlPattern]) => createUrlRule(path, urlPattern)
-  )
+  for(const path in rules) {
+    const urlPattern = rules[path]
+    createUrlRule(path, urlPattern)
+  }
 
   /**
-    @arg {Set} paths - key paths: owner, owner/active, myaccount/mypermission, etc..
+    @arg {Set} paths - key paths: owner, owner/active, active/mypermission, etc..
     @arg {string} url
     @return {Array} paths that should be removed under the given Url
 
@@ -36,7 +37,6 @@ function UrlRules(rules) {
     check
   }
 }
-
 
 function createUrlRule(path, urlPattern) {
   if(typeof path === 'string') {

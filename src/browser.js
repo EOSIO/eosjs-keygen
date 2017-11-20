@@ -1,10 +1,8 @@
 const Session = require('./session')
 const config = require('./config')
 
-const createHistory = require('history').createMemoryHistory 
+const createHistory = require('history').createBrowserHistory 
 config.history = createHistory()
-
-const localStorage = require('localStorage')
-config.localStorage
+config.localStorage = localStorage
 
 module.exports = Session

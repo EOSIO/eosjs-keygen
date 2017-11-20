@@ -4,8 +4,53 @@ const {PrivateKey} = require('eosjs-ecc')
 const validate = require('./validate')
 
 module.exports = {
+  authsByPath,
   genKeys,
   keyPaths
+}
+
+/**
+  @arg {accountPermissions}
+  @return {object<path, auth>}
+*/
+function authsByPath(accountPermissions) {
+  assert(Array.isArray(accountPermissions), 'accountPermissions is an array')
+  accountPermissions.forEach(perm => assert.equal('object', typeof perm,
+    'accountPermissions is an array of objects'))
+
+  const byName = {} // Index by permission name
+  accountPermissions.forEach(perm => {
+    byName[perm.perm_name] = perm
+  })
+
+  function parentPath(perm, stack = []) {
+    stack.push(perm.parent)
+    const parent = byName[perm.parent]
+    if(parent) {
+      return parentPath(parent, stack)
+    }
+    return stack
+  }
+
+  const auths = {}
+  accountPermissions.forEach(perm => {
+    if(perm.parent === '') {
+      auths[perm.perm_name] = perm.required_auth
+    } else {
+      let pathStr = parentPath(perm).reverse().join('/')
+      if(pathStr.charAt(0) === '/') {
+        pathStr = pathStr.substring(1)
+      }
+      pathStr = `${pathStr}/${perm.perm_name}`
+      if(pathStr.indexOf('owner/active/') === 0) {
+        // active is always a child of owner
+        pathStr = pathStr.substring('owner/'.length)
+      }
+      auths[pathStr] = perm.required_auth
+    }
+  })
+
+  return auths
 }
 
 /** @typedef {{path, PrivateKey}} PrivateKeyPath */
@@ -13,15 +58,31 @@ module.exports = {
 /**
   Derive key path / key pairs for a given parent key and a blockchain account.
 
-  @arg {string|Buffer} parentPrivateKey - Master password, active, owner, or
+  @arg {string} accountName
+  @arg {accountPermissions} - blockchain account.permissions (see typedef in ./index.js)
+  @arg {parentPrivateKey} parentPrivateKey - Master password, active, owner, or
     other key in the account's permission.
 
-  @arg {accountPermissions} - blockchain account.permissions (see typedef in ./index.js)
 
   @return {Array<PrivateKeyPath>} - Selected keys or empty array for an invalid login
 */
 function keyPaths(accountName, accountPermissions, parentPrivateKey) {
-  
+  assert.equal('string', typeof accountName, 'accountName')
+  assert(Array.isArray(accountPermissions), 'accountPermissions is an array')
+  accountPermissions.forEach(perm => assert.equal('object', typeof perm,
+    'accountPermissions is an array of objects'))
+
+  const keyType = validate.keyType(parentPrivateKey)
+  assert(/master|wif|privateKey/.test(keyType),
+    'parentPrivateKey is a masterPrivateKey or private key')
+
+  const result = []
+  if(keyType === 'master') {
+    const masterPrivateKey = parentPrivateKey.substring(2)
+    const loginKeys = genKeys(masterPrivateKey)
+    // const roleKeys = keysByRole(acccountPermissions, 'owner')
+    // const okeys.publicKeys.owner === 
+  }
 }
 
 // @arg {function} selector(path) - Return `false` to skip a key path (public
@@ -30,6 +91,10 @@ function keyPaths(accountName, accountPermissions, parentPrivateKey) {
 /**
 */
 function genKeys(masterPrivateKey) {
+  masterPrivateKey = PrivateKey(masterPrivateKey)
+  assert(masterPrivateKey != null,
+    'masterPrivateKey is a valid private key')
+
   const ownerPrivate = masterPrivateKey.getChildKey('owner')
   const activePrivate = ownerPrivate.getChildKey('active')
   return {

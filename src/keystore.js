@@ -1,5 +1,5 @@
 const assert = require('assert')
-const localStorage = require('localStorage')
+const localStorage = require('./config').localStorage
 
 const ecc = require('eosjs-ecc')
 const userStorage = require('./storage-utils')('ustor')
@@ -26,7 +26,7 @@ function KeyStore(userId) {
     Save a private or public key to the store in either RAM only or RAM and
     disk. Prevents certain key types from being saved on disk.
 
-    @arg {string} path - myaccount/mypermission, owner, owner/active
+    @arg {string} path - active/mypermission, owner, owner/active
     @arg {string|array} key - wif, pubkey, or PrivateKey
     @arg {boolean} disk - save to local storage
 
@@ -37,7 +37,7 @@ function KeyStore(userId) {
     assert(path !== 'master', 'master key should not be saved anywhere')
 
     const keyType = validate.keyType(key)
-    assert(/^wif|pubkey|PrivateKey$/.test(keyType),
+    assert(/^wif|pubkey|privateKey$/.test(keyType),
       'key should be a wif, public key string, or privateKey object')
   
     if(disk) {
@@ -48,7 +48,7 @@ function KeyStore(userId) {
 
     const wif =
       keyType === 'wif' ? key :
-      keyType === 'privateKey' ? key.toWif() :
+      keyType === 'privateKey' ? ecc.PrivateKey(key).toWif() :
       null
 
     const pubkey =
@@ -160,8 +160,7 @@ function KeyStore(userId) {
     remove,
     getPublicKey,
     getPrivateKey,
-    getPublicKeyPaths,
-    getPrivateKeyPaths,
+    getKeyPaths,
     wipeSession,
     wipeUser
   }

@@ -4,6 +4,8 @@ const generate = require('./generate')
 const KeyStore = require('./keystore')
 const UrlRules = require('./url-rules')
 const validate = require('./validate')
+const {PrivateKey} = require('eosjs-ecc')
+const history = require('./config').history
 
 module.exports = Session
 
@@ -29,7 +31,7 @@ config = {
   urlRules: {
     'owner': 'account_recovery',
     'owner/active': '@${accountName}/transfers',
-    '${accountName}/**': '@${accountName}'
+    'active/**': '@${accountName}'
   }
 }
 
@@ -51,8 +53,10 @@ function Session(userId, config = {}) {
 
   const urlRules = UrlRules(config.urlRules)
   const keyStore = KeyStore(userId)
-  let lastUrl
-
+  
+  let expireAt, expireInterval
+  let unlistenHistory
+  
   /**
     Creates private keys and saves them in the keystore for use on demand.  This
     may be called to add additional keys which were removed as a result of Url
@@ -71,7 +75,10 @@ function Session(userId, config = {}) {
     
     @arg {Array<minimatch>} [saveLoginsByPath] - These permissions will be
     saved to disk.  An exception is thrown if a master, owner or active key
-    save is attempted. (example: ['myaccount/**', ..])
+    save is attempted. (example: ['**', ..]). A timeout will not
+    expire, logout to remove.
+
+    @throws {Error} 'invalid login'
   */
   function login(
     accountName,
@@ -79,13 +86,9 @@ function Session(userId, config = {}) {
     parentPrivateKey,
     saveLoginsByPath = []
   ) {
-    assert(lastUrl != null, 'call currentUrl first')
+    const authsByPath = generate.authsByPath(accountPermissions)
+    const purges = urlRules.check(paths, history.location)
 
-    // TODO design here is still work-in-progress
-
-    // const paths = generate.accountPermissionPaths(accountPermissions)
-    // const purges = urlRules.check(paths, lastUrl)
-    
     const keys = generate.keyPaths(
       parentPrivateKey,
       accountPermissions,
@@ -93,9 +96,30 @@ function Session(userId, config = {}) {
         return paths.filter(path => !purges.contains(path))
       }
     )
+
     keys.forEach(([path, wif, pubkey]) => {
       keyStore.save(path, wif)
     })
+
+    unlistenHistory = history.listen((location, action) => {
+      console.log('testing::history', action, location.pathname, location.state)
+
+      // location is like window.location
+      currentUrl(location)
+    })
+
+    if(config.timeout != null) {
+      keepAlive()
+      function tick() {
+        if(timeUntilExpire() === 0) {
+          expire()
+        }
+      }
+
+      // A small expireIntervalTime may be used for unit testing
+      const expireIntervalTime = Math.min(sec, config.timeout)
+      expireInterval = setInterval(tick, expireIntervalTime)
+    }
   }
 
   /**
@@ -104,18 +128,35 @@ function Session(userId, config = {}) {
   */
   function logout() {
     keyStore.wipeUser()
+    if(unlistenHistory) {
+      unlistenHistory()
+    }
+    clearInterval(expireInterval)
   }
 
   /**
-    @return {number} 0 (expired) or milliseconds until expire
+    @return {number} 0 (expired), null, or milliseconds until expire
   */
   function timeUntilExpire() {
-    return 0
+    return
+      expireAt === 0 ? 0 :
+      expireAt == null ? null :
+      Math.max(0, expireAt - Date.now())
   }
 
-  /** Keep alive (prevent expiration). */
+  /**
+    Keep alive (prevent expiration).  Called automatically if Url navigation
+    happens or keys are obtained from the keyStore.  It may be necessary
+    to call this manually.
+  */
   function keepAlive() {
-    
+    expireAt = Date.now() + config.timeout * min
+  }
+
+  /** @private */
+  function expire() {
+    expireAt = 0
+    keyStore.wipeSession()
   }
 
   /**
@@ -133,7 +174,7 @@ function Session(userId, config = {}) {
     @example url = 'http://localhost/@myaccount/transfers'
   */
   function currentUrl(url) {
-    lastUrl = url
+    keepAlive()
     const paths = keyStore.getKeyPaths()
     const checks = urlRules.check(paths.wif, url)
     checks.forEach(path => { keyStore.remove(path) })
@@ -144,3 +185,31 @@ function Session(userId, config = {}) {
     timeUntilExpire, keepAlive
   }
 }
+
+/**
+  New accounts will call this to generate a new keyset..
+
+  A password manager or backup should save the returned
+  {masterPrivateKey} for later login.
+
+  @arg {number} cpuEntropyBits - Use 0 for fast testing, 128 (default) takes a
+  second
+
+  @return {object}
+  @example
+{
+  masterPrivateKey, // <= place in a password input field (password manager)
+  privateKeys: {owner, active},
+  publicKeys: {owner, active}
+}
+*/
+Session.generateMasterKeys = function(cpuEntropyBits) {
+  return generate.genKeys(PrivateKey.randomKey(cpuEntropyBits))
+}
+
+/**
+  @see addEntropy https://github.com/EOSIO/eosjs-ecc/blob/master/src/key_utils.js
+*/
+Session.addEntropy = (...data) => key_utils.addEntropy(data)
+
+const sec = 1000, min = 0 * sec
