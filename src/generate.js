@@ -86,8 +86,12 @@ function keysByPath(parentPrivateKey, accountPermissions) {
 //   key calculation is expensive).
 
 /**
+  @arg {wif} [masterPrivateKey = null] When null, a random key is created..
 */
-function genKeys(masterPrivateKey) {
+function genKeys(masterPrivateKey, cpuEntropyBits) {
+  if(masterPrivateKey == null) {
+    masterPrivateKey = PrivateKey.randomKey(cpuEntropyBits)
+  }
   masterPrivateKey = PrivateKey(masterPrivateKey)
   assert(masterPrivateKey != null,
     'masterPrivateKey is a valid private key')

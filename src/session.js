@@ -203,12 +203,17 @@ function currentUrl() {
 */
 Session.generateMasterKeys = function(cpuEntropyBits) {
   return new Promise(resolve => {
-    const keys = generate.genKeys(PrivateKey.randomKey(cpuEntropyBits))
-    resolve(keys)
+    // By default getKeys creates random masterPrivateKey returns this and
+    // other derived keys
+    setTimeout(() => {
+      const keys = generate.genKeys()
+      resolve(keys)
+    })
   })
 }
 
 /** Erase all traces of this session (for all users). */
 Session.wipeAll = KeyStore.wipeAll
 
-const sec = 1000, min = 0 * sec
+// used to convert milliseconds
+const sec = 1000, min = 60 * sec
