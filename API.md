@@ -88,8 +88,7 @@ session.login(...)
 * [Session(userId, [config])](#Session)
     * _static_
         * [.wipeAll](#Session.wipeAll)
-        * [.generateMasterKeys(cpuEntropyBits)](#Session.generateMasterKeys) ⇒ <code>object</code>
-        * [.addEntropy()](#Session.addEntropy)
+        * [.generateMasterKeys(cpuEntropyBits)](#Session.generateMasterKeys) ⇒ <code>Promise</code>
     * _inner_
         * [~login(parentPrivateKey, accountPermissions, [saveLoginsByPath])](#Session..login)
         * [~logout()](#Session..logout)
@@ -104,7 +103,7 @@ Erase all traces of this session (for all users).
 **Kind**: static property of [<code>Session</code>](#Session)  
 <a name="Session.generateMasterKeys"></a>
 
-### Session.generateMasterKeys(cpuEntropyBits) ⇒ <code>object</code>
+### Session.generateMasterKeys(cpuEntropyBits) ⇒ <code>Promise</code>
 New accounts will call this to generate a new keyset..
 
   A password manager or backup should save the returned
@@ -124,11 +123,6 @@ New accounts will call this to generate a new keyset..
   publicKeys: {owner, active}
 }
 ```
-<a name="Session.addEntropy"></a>
-
-### Session.addEntropy()
-**Kind**: static method of [<code>Session</code>](#Session)  
-**See**: addEntropy https://github.com/EOSIO/eosjs-ecc/blob/master/src/key_utils.js  
 <a name="Session..login"></a>
 
 ### Session~login(parentPrivateKey, accountPermissions, [saveLoginsByPath])
@@ -303,14 +297,15 @@ A valid regular expression string or a regular expression object. If a string
 **Kind**: global typedef  
 **Example**  
 ```js
-// A string UrlPathMatch is handled as follows:
+// A string is handled as follows..
 
-// If it does not sart with ^, root with /
+// If it does not sart with ^, ensure match starts with /
 const prefix = re.charAt(0) === '^' ? '' : '^/'
 
-// If it does not end with $, allow any valid Url suffix
+// If it does not end with $, allow any valid Url suffix after your path
 const suffix = re.charAt(re.length - 1) === '$' ? '' : '([/\?#].*)?$'
 
+// Path matches are case in-sensitive (per the url specification)
 return new RegExp(prefix + re + suffix, 'i')
 ```
 <a name="UrlPathSet"></a>
