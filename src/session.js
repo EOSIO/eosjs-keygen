@@ -19,7 +19,7 @@ module.exports = Session
 
   @arg {object} [config]
   @arg {number} [config.timeout = 30] - minutes
-  @arg {Object<minimatch, RegexpSet>} [config.urlRules] - Specify which type
+  @arg {Object<minimatch, UrlPathSet>} [config.urlRules] - Specify which type
   of private key will be available on certain pages of the application.
 
 @example
@@ -62,17 +62,15 @@ function Session(userId, config = {}) {
     may be called to add additional keys which were removed as a result of Url
     navigation or from calling logout.
 
-    @arg {string} accountName - Blockchain account.name (example: myaccount)
+    @arg {parentPrivateKey} parentPrivateKey - Master password (masterPrivateKey),
+    active, owner, or other permission key.
 
     @arg {accountPermissions} accountPermissions - Permissions object from Eos
     blockchain via get_account.  This is used to validate the parentPrivateKey
     and derive additional permission keys.  This allows this session
     to detect incorrect passwords early before trying to sign a transaction.
     See Chain API `get_account => account.permissions`.
-
-    @arg {parentPrivateKey} parentPrivateKey - Master password (masterPrivateKey),
-    active, owner, or other permission key.
-    
+   
     @arg {Array<minimatch>} [saveLoginsByPath] - These permissions will be
     saved to disk.  An exception is thrown if a master, owner or active key
     save is attempted. (example: ['**', ..]). A timeout will not
@@ -81,31 +79,45 @@ function Session(userId, config = {}) {
     @throws {Error} 'invalid login'
   */
   function login(
-    accountName,
-    accountPermissions,
     parentPrivateKey,
+    accountPermissions,
     saveLoginsByPath = []
   ) {
+    const keyType = validate.keyType(parentPrivateKey)
+    if(keyType === 'master') {
+      parentPrivateKey = PrivateKey(parentPrivateKey.substring(2))
+    } else {
+      parentPrivateKey = PrivateKey(parentPrivateKey)
+    }
+    assert(parentPrivateKey != null,
+      'parentPrivateKey is a master password or private key')
+
     const authsByPath = generate.authsByPath(accountPermissions)
-    const purges = urlRules.check(paths, history.location)
+    const paths = Object.keys(authsByPath)
+    const allowedPaths = urlRules.check(paths, currentUrl())
 
-    const keys = generate.keyPaths(
-      parentPrivateKey,
-      accountPermissions,
-      paths => {
-        return paths.filter(path => !purges.contains(path))
-      }
-    )
+    for(const path of allowedPaths) {
+      
+    }
+    // const keys = generate.keysByPath(
+    //   parentPrivateKey,
+    //   accountPermissions,
+    //   paths => {
+    //     return paths.filter(path => !purges.contains(path))
+    //   }
+    // )
 
-    keys.forEach(([path, wif, pubkey]) => {
-      keyStore.save(path, wif)
-    })
+    // keys.forEach(([path, wif, pubkey]) => {
+    //   keyStore.save(path, wif)
+    // })
 
-    unlistenHistory = history.listen((location, action) => {
-      console.log('testing::history', action, location.pathname, location.state)
+    unlistenHistory = history.listen(() => {
+      keepAlive()
 
-      // location is like window.location
-      currentUrl(location)
+      // Prevent certain private keys from being available to high-risk pages.
+      const paths = keyStore.getKeyPaths().wif
+      const pathsToPurge = urlRules.check(paths, currentUrl())
+      keyStore.remove(pathsToPurge/*, keepPublicKey*/)
     })
 
     if(config.timeout != null) {
@@ -159,31 +171,17 @@ function Session(userId, config = {}) {
     keyStore.wipeSession()
   }
 
-  /**
-    @private
-    Prevent certain private keys from being available to high-risk pages.
-
-    Call this function:
-    - Before logging in
-    - On each Url change before the page loads
-
-    The Url is tested against config.urlRules and matches may prevent that
-    private key from sticking around.
-
-    @arg {string} url
-    @example url = 'http://localhost/@myaccount/transfers'
-  */
-  function currentUrl(url) {
-    keepAlive()
-    const paths = keyStore.getKeyPaths()
-    const checks = urlRules.check(paths.wif, url)
-    checks.forEach(path => { keyStore.remove(path) })
-  }
-
   return {
-    logout, currentUrl, login,
+    login, logout,
     timeUntilExpire, keepAlive
   }
+}
+
+/** @private */
+function currentUrl() {
+  const location = history.location
+  const url = `${location.pathname}${location.search}${location.hash}`
+  return url
 }
 
 /**
@@ -195,7 +193,7 @@ function Session(userId, config = {}) {
   @arg {number} cpuEntropyBits - Use 0 for fast testing, 128 (default) takes a
   second
 
-  @return {object}
+  @return {Promise}
   @example
 {
   masterPrivateKey, // <= place in a password input field (password manager)
@@ -204,12 +202,13 @@ function Session(userId, config = {}) {
 }
 */
 Session.generateMasterKeys = function(cpuEntropyBits) {
-  return generate.genKeys(PrivateKey.randomKey(cpuEntropyBits))
+  return new Promise(resolve => {
+    const keys = generate.genKeys(PrivateKey.randomKey(cpuEntropyBits))
+    resolve(keys)
+  })
 }
 
-/**
-  @see addEntropy https://github.com/EOSIO/eosjs-ecc/blob/master/src/key_utils.js
-*/
-Session.addEntropy = (...data) => key_utils.addEntropy(data)
+/** Erase all traces of this session (for all users). */
+Session.wipeAll = KeyStore.wipeAll
 
 const sec = 1000, min = 0 * sec

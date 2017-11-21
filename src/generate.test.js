@@ -6,7 +6,7 @@ const {PrivateKey} = require('eosjs-ecc')
 const generate = require('./generate')
 
 describe('Generate', () => {
-  it('accountPermissionPaths', () => {
+  it('authsByPath', () => {
     const paths = generate.authsByPath(accountPermissions)
     assert.deepEqual(
       ['owner/active', 'active/mypermission', 'owner'],
@@ -14,9 +14,9 @@ describe('Generate', () => {
     )
   })
 
-  it('keyPaths', () => {
+  it('keysByPath', () => {
     const master = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
-    generate.keyPaths('eos', accountPermissions, master)
+    generate.keysByPath(master, accountPermissions)
   })
 
   it('keyGen', () => {

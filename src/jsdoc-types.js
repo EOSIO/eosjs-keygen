@@ -18,7 +18,8 @@
 
 /**
   Master Private Key.  Strong random key used to derive all other key types.
-  (PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp, 'PW' + wif)
+  Has a 'PW' prefix followed by a valid wif. (`'PW' + wif ===
+  'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'`)
   @typedef {string} masterPrivateKey
 */
 
@@ -115,19 +116,20 @@
 
   If a RegExp object is provided, it is used without modification.  
 
-  @typedef {string|RegExp} RegMatch
+  @typedef {string|RegExp} UrlPathMatch
   @example
-// A string RegMatch is handled as follows:
+// A string is handled as follows..
 
-// If it does not sart with ^, root with http or https then any domain
-const prefix = re.charAt(0) === '^' ? '' : '^https?://[^/]+/'
+// If it does not sart with ^, ensure match starts with /
+const prefix = re.charAt(0) === '^' ? '' : '^/'
 
-// If it does not end with $, allow any valid Url suffix
+// If it does not end with $, allow any valid Url suffix after your path
 const suffix = re.charAt(re.length - 1) === '$' ? '' : '([/\?#].*)?$'
 
+// Path matches are case in-sensitive (per the url specification)
 return new RegExp(prefix + re + suffix, 'i')
 */
 
 /**
-  @typedef {RegMatch|Array<RegMatch>} RegexpSet
+  @typedef {UrlPathMatch|Array<UrlPathMatch>} UrlPathSet
 */

@@ -1,7 +1,8 @@
 const Session = require('./session')
+
+const createHistory = require('history').createBrowserHistory
 const config = require('./config')
 
-const createHistory = require('history').createBrowserHistory 
 config.history = createHistory()
 config.localStorage = localStorage
 

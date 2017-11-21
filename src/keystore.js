@@ -69,24 +69,37 @@ function KeyStore(userId) {
   }
 
   /**
-    Remove a key from ram and disk.
+    Remove a key or keys from this key store (ram and disk).
 
-    @arg {boolean} keepPublicKey - (true) Can lead to better UX by showing users
-      keys they have access too without requiring them to login and bringing a
-      private key online.  The UX should make this behavior clear to users
-      before turning this on.
+    @arg {path|Array<path>|Set<path>}
+
+    @arg {boolean} keepPublicKey - Enable for better UX; show users keys they
+    have access too without requiring them to login. Logging in brings a
+    private key online which is not necessary to see public information (balance,
+    etc).
+
+    The UX should implement this behavior in a way that is clear public keys
+    are cached before enabling this feature.
   */
-  function remove(path, keepPublicKey = false) {
-    validate.path(path)
+  function remove(paths, keepPublicKey = false) {
+    console.log('keystore ==> remove paths', paths)
 
-    const userKeyWif = userStorage.key(userId, 'kpath', 'wif', path)
-    state[userKeyWif] = null
-    localStorage[userKeyWif] = null
+    if(typeof paths === 'string') {
+      paths = [paths]
+    }
+    assert(paths instanceof Array || paths instanceof Set, 'paths is a Set or Array')
+    paths.forEach(path => {validate.path(paths)})
 
-    if(!keepPublicKey) {
-      const userKeyPub = userStorage.key(userId, 'kpath', 'pubkey', path)
-      state[userKeyPub] = null
-      localStorage[userKeyPub] = null
+    for(const path of paths) {
+      const userKeyWif = userStorage.key(userId, 'kpath', 'wif', path)
+      state[userKeyWif] = null
+      localStorage[userKeyWif] = null
+
+      if(!keepPublicKey) {
+        const userKeyPub = userStorage.key(userId, 'kpath', 'pubkey', path)
+        state[userKeyPub] = null
+        localStorage[userKeyPub] = null
+      }
     }
   }
 

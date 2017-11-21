@@ -1,3 +1,4 @@
+const assert = require('assert')
 
 module.exports = UrlRules
 
@@ -5,12 +6,12 @@ module.exports = UrlRules
   Create path and corresponding Url matching regular expressions.  If a path
   matches but the url does not, it will show up in a remove list.
 
-  @arg {Object<minimatch, RegexpSet>} rules
+  @arg {Object<minimatch, UrlPathSet>} rules
 
   @example UrlRules({
-    'owner': 'account_recovery',
-    'owner/active': '@[\w\.]+/transfers',
-    'active/**': '@[\w\.]'
+    'owner': '/account_recovery',
+    'owner/active': '/@[\w\.]+/transfers',
+    'active/**': '/@[\w\.]'
   })
 */
 function UrlRules(rules) {
@@ -20,17 +21,24 @@ function UrlRules(rules) {
   }
 
   /**
-    @arg {Set} paths - key paths: owner, owner/active, active/mypermission, etc..
+    @arg {Set<path>|Array<path>} paths - key paths: owner, owner/active,
+    active/mypermission, etc..
+  
     @arg {string} url
-    @return {Array} paths that should be removed under the given Url
+  
+    @return {Array} paths that should be kept under the given Url
 
-    @example assert.deepEqual([], check(['owner'], 'http://localhost/account_recovery')
-    @example assert.deepEqual(['owner'], check(['owner'], 'http://localhost/@myaccount/..')
+    @example assert.deepEqual([], check(['owner'], '/account_recovery')
+    @example assert.deepEqual(['owner'], check(['owner'], '/@myaccount/..')
   */
   function check(paths, url) {
-    return paths.filter(path => {
+    assert(paths instanceof Array || paths instanceof Set, 'paths is a Set or Array')
+
+    const allowedPaths = []
+    for(const path of paths) {
+      console.log('path', path)
       
-    })
+    }
   }
 
   return {
@@ -50,7 +58,7 @@ function createUrlRule(path, urlPattern) {
   }
   const reArray = urlPattern.map(re => {
     if(typeof re === 'string') {
-      const prefix = re.charAt(0) === '^' ? '' : '^https?://[^/]+/'
+      const prefix = re.charAt(0) === '^' ? '' : '^/'
       const suffix = re.charAt(re.length - 1) === '$' ? '' : '([/\?#].*)?$'
       re = new RegExp(prefix + re + suffix, 'i')
     }

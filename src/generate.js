@@ -5,8 +5,8 @@ const validate = require('./validate')
 
 module.exports = {
   authsByPath,
+  keysByPath,
   genKeys,
-  keyPaths
 }
 
 /**
@@ -58,23 +58,20 @@ function authsByPath(accountPermissions) {
 /**
   Derive key path / key pairs for a given parent key and a blockchain account.
 
-  @arg {string} accountName
   @arg {accountPermissions} - blockchain account.permissions (see typedef in ./index.js)
   @arg {parentPrivateKey} parentPrivateKey - Master password, active, owner, or
     other key in the account's permission.
 
-
   @return {Array<PrivateKeyPath>} - Selected keys or empty array for an invalid login
 */
-function keyPaths(accountName, accountPermissions, parentPrivateKey) {
-  assert.equal('string', typeof accountName, 'accountName')
-  assert(Array.isArray(accountPermissions), 'accountPermissions is an array')
-  accountPermissions.forEach(perm => assert.equal('object', typeof perm,
-    'accountPermissions is an array of objects'))
-
+function keysByPath(parentPrivateKey, accountPermissions) {
   const keyType = validate.keyType(parentPrivateKey)
   assert(/master|wif|privateKey/.test(keyType),
     'parentPrivateKey is a masterPrivateKey or private key')
+
+  assert(Array.isArray(accountPermissions), 'accountPermissions is an array')
+  accountPermissions.forEach(perm => assert.equal('object', typeof perm,
+    'accountPermissions is an array of objects'))
 
   const result = []
   if(keyType === 'master') {

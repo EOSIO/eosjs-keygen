@@ -21,7 +21,8 @@
 </dd>
 <dt><a href="#masterPrivateKey">masterPrivateKey</a> : <code>string</code></dt>
 <dd><p>Master Private Key.  Strong random key used to derive all other key types.
-  (PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp, &#39;PW&#39; + wif)</p>
+  Has a &#39;PW&#39; prefix followed by a valid wif. (<code>&#39;PW&#39; + wif ===
+  &#39;PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp&#39;</code>)</p>
 </dd>
 <dt><a href="#owner">owner</a> : <code><a href="#wif">wif</a></code></dt>
 <dd><p>Cold storage / recovery key</p>
@@ -42,13 +43,13 @@
 <dt><a href="#minimatch">minimatch</a> : <code>string</code></dt>
 <dd><p>Glob matching expressions (<code>active/**</code>, <code>owner/*</code>).</p>
 </dd>
-<dt><a href="#RegMatch">RegMatch</a> : <code>string</code> | <code>RegExp</code></dt>
+<dt><a href="#UrlPathMatch">UrlPathMatch</a> : <code>string</code> | <code>RegExp</code></dt>
 <dd><p>A valid regular expression string or a regular expression object. If a string
   is provided it is converted to a RegExp by inspecting and optionally adding
   common suffixes and prefixes.</p>
 <p>  If a RegExp object is provided, it is used without modification.</p>
 </dd>
-<dt><a href="#RegexpSet">RegexpSet</a> : <code><a href="#RegMatch">RegMatch</a></code> | <code><a href="#RegMatch">Array.&lt;RegMatch&gt;</a></code></dt>
+<dt><a href="#UrlPathSet">UrlPathSet</a> : <code><a href="#UrlPathMatch">UrlPathMatch</a></code> | <code><a href="#UrlPathMatch">Array.&lt;UrlPathMatch&gt;</a></code></dt>
 <dd></dd>
 </dl>
 
@@ -64,7 +65,7 @@ Provides private key management and storage.
 | userId | <code>string</code> |  | An stable identifier (or hash) for the user. Make   sure the id is stored externally before it is used here.  The Id may   be created before a blockchain account name is available.  An account   name may be assigned later in the login function. |
 | [config] | <code>object</code> |  |  |
 | [config.timeout] | <code>number</code> | <code>30</code> | minutes |
-| [config.urlRules] | <code>Object.&lt;minimatch, RegexpSet&gt;</code> |  | Specify which type   of private key will be available on certain pages of the application. |
+| [config.urlRules] | <code>Object.&lt;minimatch, UrlPathSet&gt;</code> |  | Specify which type   of private key will be available on certain pages of the application. |
 
 **Example**  
 ```js
@@ -86,14 +87,21 @@ session.login(...)
 
 * [Session(userId, [config])](#Session)
     * _static_
+        * [.wipeAll](#Session.wipeAll)
         * [.generateMasterKeys(cpuEntropyBits)](#Session.generateMasterKeys) ⇒ <code>object</code>
         * [.addEntropy()](#Session.addEntropy)
     * _inner_
-        * [~login(accountName, accountPermissions, parentPrivateKey, [saveLoginsByPath])](#Session..login)
+        * [~login(parentPrivateKey, accountPermissions, [saveLoginsByPath])](#Session..login)
         * [~logout()](#Session..logout)
         * [~timeUntilExpire()](#Session..timeUntilExpire) ⇒ <code>number</code>
         * [~keepAlive()](#Session..keepAlive)
 
+<a name="Session.wipeAll"></a>
+
+### Session.wipeAll
+Erase all traces of this session (for all users).
+
+**Kind**: static property of [<code>Session</code>](#Session)  
 <a name="Session.generateMasterKeys"></a>
 
 ### Session.generateMasterKeys(cpuEntropyBits) ⇒ <code>object</code>
@@ -123,7 +131,7 @@ New accounts will call this to generate a new keyset..
 **See**: addEntropy https://github.com/EOSIO/eosjs-ecc/blob/master/src/key_utils.js  
 <a name="Session..login"></a>
 
-### Session~login(accountName, accountPermissions, parentPrivateKey, [saveLoginsByPath])
+### Session~login(parentPrivateKey, accountPermissions, [saveLoginsByPath])
 Creates private keys and saves them in the keystore for use on demand.  This
     may be called to add additional keys which were removed as a result of Url
     navigation or from calling logout.
@@ -136,9 +144,8 @@ Creates private keys and saves them in the keystore for use on demand.  This
 
 | Param | Type | Description |
 | --- | --- | --- |
-| accountName | <code>string</code> | Blockchain account.name (example: myaccount) |
-| accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | Permissions object from Eos     blockchain via get_account.  This is used to validate the parentPrivateKey     and derive additional permission keys.  This allows this session     to detect incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
 | parentPrivateKey | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password (masterPrivateKey),     active, owner, or other permission key. |
+| accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | Permissions object from Eos     blockchain via get_account.  This is used to validate the parentPrivateKey     and derive additional permission keys.  This allows this session     to detect incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
 | [saveLoginsByPath] | [<code>Array.&lt;minimatch&gt;</code>](#minimatch) | These permissions will be     saved to disk.  An exception is thrown if a master, owner or active key     save is attempted. (example: ['**', ..]). A timeout will not     expire, logout to remove. |
 
 <a name="Session..logout"></a>
@@ -184,7 +191,8 @@ Private key object from eosjs-ecc.
 
 ## masterPrivateKey : <code>string</code>
 Master Private Key.  Strong random key used to derive all other key types.
-  (PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp, 'PW' + wif)
+  Has a 'PW' prefix followed by a valid wif. (`'PW' + wif ===
+  'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'`)
 
 **Kind**: global typedef  
 <a name="owner"></a>
@@ -283,9 +291,9 @@ Glob matching expressions (`active/**`, `owner/*`).
 
 **Kind**: global typedef  
 **See**: https://www.npmjs.com/package/minimatch  
-<a name="RegMatch"></a>
+<a name="UrlPathMatch"></a>
 
-## RegMatch : <code>string</code> \| <code>RegExp</code>
+## UrlPathMatch : <code>string</code> \| <code>RegExp</code>
 A valid regular expression string or a regular expression object. If a string
   is provided it is converted to a RegExp by inspecting and optionally adding
   common suffixes and prefixes.
@@ -295,17 +303,17 @@ A valid regular expression string or a regular expression object. If a string
 **Kind**: global typedef  
 **Example**  
 ```js
-// A string RegMatch is handled as follows:
+// A string UrlPathMatch is handled as follows:
 
-// If it does not sart with ^, root with http or https then any domain
-const prefix = re.charAt(0) === '^' ? '' : '^https?://[^/]+/'
+// If it does not sart with ^, root with /
+const prefix = re.charAt(0) === '^' ? '' : '^/'
 
 // If it does not end with $, allow any valid Url suffix
 const suffix = re.charAt(re.length - 1) === '$' ? '' : '([/\?#].*)?$'
 
 return new RegExp(prefix + re + suffix, 'i')
 ```
-<a name="RegexpSet"></a>
+<a name="UrlPathSet"></a>
 
-## RegexpSet : [<code>RegMatch</code>](#RegMatch) \| [<code>Array.&lt;RegMatch&gt;</code>](#RegMatch)
+## UrlPathSet : [<code>UrlPathMatch</code>](#UrlPathMatch) \| [<code>Array.&lt;UrlPathMatch&gt;</code>](#UrlPathMatch)
 **Kind**: global typedef  

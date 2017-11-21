@@ -36,7 +36,7 @@ function Storage(namespace) {
   }
 
   function query(state, keyPrefix, callback) {
-    const prefix = storageKey(...keyPrefix)
+    const prefix = key(...keyPrefix)
     for(const key of Object.keys(state)) {
       if(key.indexOf(prefix) !== 0) {
         continue
