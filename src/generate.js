@@ -87,6 +87,8 @@ function keysByPath(parentPrivateKey, accountPermissions) {
 
 /**
   @arg {wif} [masterPrivateKey = null] When null, a random key is created..
+  @arg {number} [cpuEntropyBits = null] null to use CPU entropy or 0 for
+  fast test keys
 */
 function genKeys(masterPrivateKey, cpuEntropyBits) {
   if(masterPrivateKey == null) {

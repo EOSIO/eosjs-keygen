@@ -206,7 +206,7 @@ Session.generateMasterKeys = function(cpuEntropyBits) {
     // By default getKeys creates random masterPrivateKey returns this and
     // other derived keys
     setTimeout(() => {
-      const keys = generate.genKeys()
+      const keys = generate.genKeys(null, cpuEntropyBits)
       resolve(keys)
     })
   })

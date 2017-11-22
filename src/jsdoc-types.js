@@ -24,12 +24,13 @@
 */
 
 /**
-  Cold storage / recovery key
+  Cold storage / recovery key.  Has authoritiy to do everything including
+  account recovery.
   @typedef {wif} owner
 */
 
 /**
-  Spending key
+  Spending key.  Has the authority to do everything except account recovery.
   @typedef {wif} active
 */
 
@@ -44,11 +45,18 @@
 */
 
 /**
+  A URL without the prefixing protocol, host, and /
+  @typedef {string} urlpath
+  @example 
+*/
+
+/**
   Signing Keys and(or) Accounts each having a weight that when matched in
   the signatures should accumulate to meet or exceed the auth's total threshold.
 
   @typedef {object} auth
-  @example required_auth: {
+  @example
+required_auth: {
   threshold: 1,
   keys: [{
       key: 'EOS78Cs5HPKY7HKHrSMnR76uj7yeajPuNwSH1Fsria3sJuufwE3Zd',

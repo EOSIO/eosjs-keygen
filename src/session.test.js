@@ -24,9 +24,11 @@ describe('Session', () => {
     Session.wipeAll()
   })
 
-  it('generateMasterKeys', () => {
-    const keys = Session.generateMasterKeys(0)
-    checkKeySet(keys)
+  it('generateMasterKeys', (done) => {
+    Session.generateMasterKeys(0).then(keys => {
+      checkKeySet(keys)
+      done()
+    })
   })
 
   it('constructor', () => {
