@@ -25,16 +25,20 @@
   &#39;PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp&#39;</code>)</p>
 </dd>
 <dt><a href="#owner">owner</a> : <code><a href="#wif">wif</a></code></dt>
-<dd><p>Cold storage / recovery key</p>
+<dd><p>Cold storage / recovery key.  Has authoritiy to do everything including
+  account recovery.</p>
 </dd>
 <dt><a href="#active">active</a> : <code><a href="#wif">wif</a></code></dt>
-<dd><p>Spending key</p>
+<dd><p>Spending key.  Has the authority to do everything except account recovery.</p>
 </dd>
 <dt><a href="#parentPrivateKey">parentPrivateKey</a> : <code><a href="#masterPrivateKey">masterPrivateKey</a></code> | <code><a href="#wif">wif</a></code></dt>
 <dd><p>Master private key or one of its derived private keys.</p>
 </dd>
 <dt><a href="#path">path</a> : <code>string</code></dt>
 <dd><p>Key derviation path (<code>master</code>, <code>owner</code>, <code>owner/active</code>, <code>active/mypermission</code>, ..)</p>
+</dd>
+<dt><a href="#urlpath">urlpath</a> : <code>string</code></dt>
+<dd><p>A URL without the prefixing protocol, host, and /</p>
 </dd>
 <dt><a href="#accountPermissions">accountPermissions</a> : <code>object</code></dt>
 <dd><p>Signing Keys and(or) Accounts each having a weight that when matched in
@@ -192,13 +196,14 @@ Master Private Key.  Strong random key used to derive all other key types.
 <a name="owner"></a>
 
 ## owner : [<code>wif</code>](#wif)
-Cold storage / recovery key
+Cold storage / recovery key.  Has authoritiy to do everything including
+  account recovery.
 
 **Kind**: global typedef  
 <a name="active"></a>
 
 ## active : [<code>wif</code>](#wif)
-Spending key
+Spending key.  Has the authority to do everything except account recovery.
 
 **Kind**: global typedef  
 <a name="parentPrivateKey"></a>
@@ -213,6 +218,16 @@ Master private key or one of its derived private keys.
 Key derviation path (`master`, `owner`, `owner/active`, `active/mypermission`, ..)
 
 **Kind**: global typedef  
+<a name="urlpath"></a>
+
+## urlpath : <code>string</code>
+A URL without the prefixing protocol, host, and /
+
+**Kind**: global typedef  
+**Example**  
+```js
+['account_recovery', 'producers', '@[\w\.]']
+```
 <a name="accountPermissions"></a>
 
 ## accountPermissions : <code>object</code>

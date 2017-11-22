@@ -47,7 +47,7 @@
 /**
   A URL without the prefixing protocol, host, and /
   @typedef {string} urlpath
-  @example 
+  @example ['account_recovery', 'producers', '@[\w\.]']
 */
 
 /**
