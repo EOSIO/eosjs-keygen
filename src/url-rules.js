@@ -1,4 +1,5 @@
 const assert = require('assert')
+const minimatch = require("minimatch")
 
 module.exports = UrlRules
 
@@ -9,35 +10,68 @@ module.exports = UrlRules
   @arg {Object<minimatch, UrlPathSet>} rules
 
   @example UrlRules({
-    'owner': '/account_recovery',
-    'owner/active': '/@[\w\.]+/transfers',
-    'active/**': '/@[\w\.]'
+    'owner': 'account_recovery',
+    'owner/active': '@[\w\.]+/transfers',
+    'active/**': '@[\w\.]'
   })
 */
 function UrlRules(rules) {
+  rules = Object.assign({}, rules)
+
   for(const path in rules) {
-    const urlPattern = rules[path]
-    createUrlRule(path, urlPattern)
+    const urlPatterns = rules[path]
+    const rePatterns = createUrlRules(urlPatterns)
+    rules[path] = rePatterns
   }
 
   /**
     @arg {Set<path>|Array<path>} paths - key paths: owner, owner/active,
     active/mypermission, etc..
   
-    @arg {string} url
+    @arg {urlpath}
   
-    @return {Array} paths that should be kept under the given Url
+    @return {Array<path>} private key paths allowed under current Url path
 
-    @example assert.deepEqual([], check(['owner'], '/account_recovery')
-    @example assert.deepEqual(['owner'], check(['owner'], '/@myaccount/..')
+    @example assert.equals(0 === check(['owner'], 'transfers').length,
+      'owner is only allowed in account_recovery')
+
+    @example assert.deepEqual(
+      ['active/mypermission'], check(['active/mypermission'], '@myaccount'),
+      'custom permissions should be allowed in user pages'
+    )
   */
   function check(paths, url) {
-    assert(paths instanceof Array || paths instanceof Set, 'paths is a Set or Array')
+    assert(paths instanceof Array || paths instanceof Set,
+      'paths is a Set or Array')
 
+    function filtersForPath(path) {
+      for(const path in rules) {
+        const urlPatterns = rules[path]
+        
+      }
+    }
     const allowedPaths = []
     for(const path of paths) {
-      console.log('path', path)
-      
+      const reFilters = filtersForPath(path)
+
+
+
+      const rePatterns = rules[path]
+      if(rePatterns) {
+        let oneMatches
+        for(const rePattern of rePatterns) {
+          oneMatches = minimatch(path, urlPattern)
+          if(oneMatches) {
+            break
+          }
+        }
+        if(oneMatches) {
+          allowedPaths.push(path)
+        }
+      } else {
+        allowedPaths.push(path)
+      }
+      return allowedPaths
     }
   }
 
@@ -46,24 +80,17 @@ function UrlRules(rules) {
   }
 }
 
-function createUrlRule(path, urlPattern) {
-  if(typeof path === 'string') {
-    validate.path(path)
-    path = new RegExp('^' + path + '$')
+function createUrlRules(urlPatterns) {
+  if(typeof urlPatterns === 'string') {
+    urlPatterns = [urlPatterns]
   }
-  assert(path instanceof RegExp, 'path should be a string or RegExp')
-
-  if(typeof urlPattern === 'string') {
-    urlPattern = [urlPattern]
-  }
-  const reArray = urlPattern.map(re => {
-    if(typeof re === 'string') {
-      const prefix = re.charAt(0) === '^' ? '' : '^/'
-      const suffix = re.charAt(re.length - 1) === '$' ? '' : '([/\?#].*)?$'
-      re = new RegExp(prefix + re + suffix, 'i')
+  return urlPatterns.map(urlPattern => {
+    if(typeof urlPattern === 'string') {
+      const prefix = urlPattern.charAt(0) === '^' ? '' : '^/'
+      const suffix = urlPattern.charAt(urlPattern.length - 1) === '$' ? '' : '([/\?#].*)?$'
+      urlPattern = new RegExp(prefix + urlPattern + suffix, 'i')
     }
-    assert(re instanceof RegExp, 'path should be a string or RegExp')
-    return re
+    assert(urlPattern instanceof RegExp, 'urlPattern should be a string or RegExp')
+    return urlPattern
   })
-  return [path, reArray]
 }
