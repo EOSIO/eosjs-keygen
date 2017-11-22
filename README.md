@@ -1,13 +1,19 @@
-[![Build Status](https://travis-ci.org/EOSIO/eosjs-keygen.svg?branch=master)](https://travis-ci.org/EOSIO/eosjs-keygen)
-[![NPM](https://img.shields.io/npm/v/eosjs-keygen.svg)](https://www.npmjs.org/package/eosjs-keygen)
+<!--[![Build Status](https://travis-ci.org/EOSIO/eosjs-keygen.svg?branch=master)](https://travis-ci.org/EOSIO/eosjs-keygen)
+[![NPM](https://img.shields.io/npm/v/eosjs-keygen.svg)](https://www.npmjs.org/package/eosjs-keygen)-->
 
 # Repository
 
 General purpose library for private key storage and key management.
 
+Status: **Active Development, breaking changes..**
+
 ### Usage
 
-[API](./API.md)
+```javascript
+KeyGen = require('eosjs-keygen')
+```
+
+See [API](./API.md)
 
 # Development
 
