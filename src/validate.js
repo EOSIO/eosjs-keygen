@@ -23,7 +23,7 @@ function keyType(key) {
   Static validation of a path.  Protect against common mistakes.
 
   @example path('owner')
-  @example path('owner/active')
+  @example path('active')
   @example path('active/mypermission')
 
   @see validate.test.js Validate, path
@@ -36,6 +36,8 @@ function path(path) {
   assert(path[0] !== '/', 'remove leading slash')
   assert(path[path.length - 1] !== '/', 'remove ending slash')
   assert(!/[A-Z]/.test(path), 'path should not have uppercase letters')
+
+  assert(path !== 'owner/active', 'owner is implied, juse use active')
 
   const el = Array.from(path.split('/'))
 

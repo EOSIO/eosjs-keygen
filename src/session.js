@@ -20,7 +20,9 @@ module.exports = Session
   @arg {object} [config]
   @arg {number} [config.timeout = 30] - minutes
   @arg {Object<minimatch, UrlPathSet>} [config.urlRules] - Specify which type
-  of private key will be available on certain pages of the application.
+  of private key will be available on certain pages of the application.  Lock
+  it down as much as possible and the keystore will figure out how to
+  generate and hold keys as needed.
 
 @example
 ```js
@@ -29,9 +31,9 @@ Session = require('eosjs-keygen')
 config = {
   timeout: 30,
   urlRules: {
-    'owner': 'account_recovery',
-    'owner/active': '@${accountName}/transfers',
-    'active/**': '@${accountName}'
+    'active': '/@myaccount/transfers',
+    'active/**': '/@myaccount/contracts',
+    'owner': '/@myaccount/account_recovery'
   }
 }
 
@@ -53,7 +55,7 @@ function Session(userId, config = {}) {
 
   const urlRules = UrlRules(config.urlRules)
   const keyStore = KeyStore(userId)
-  
+
   let expireAt, expireInterval
   let unlistenHistory
   
@@ -93,12 +95,13 @@ function Session(userId, config = {}) {
       'parentPrivateKey is a master password or private key')
 
     const authsByPath = generate.authsByPath(accountPermissions)
-    const paths = Object.keys(authsByPath)
-    const allowedPaths = urlRules.check(paths, currentUrl())
 
-    for(const path of allowedPaths) {
-      
-    }
+    const pathsForAccount = Object.keys(authsByPath)
+    const pathsForUrl = urlRules.check(currentUrl(), pathsForAccount)
+
+    // keyStore.remove(pathsForUrl.deny/*, keepPublicKeys*/)
+
+    // const loginPrivate = generate.keysByPath(pathsForUrl.allow)
     // const keys = generate.keysByPath(
     //   parentPrivateKey,
     //   accountPermissions,
@@ -117,7 +120,7 @@ function Session(userId, config = {}) {
       // Prevent certain private keys from being available to high-risk pages.
       const paths = keyStore.getKeyPaths().wif
       const pathsToPurge = urlRules.check(paths, currentUrl())
-      keyStore.remove(pathsToPurge/*, keepPublicKey*/)
+      keyStore.remove(pathsToPurge/*, keepPublicKeys*/)
     })
 
     if(config.timeout != null) {

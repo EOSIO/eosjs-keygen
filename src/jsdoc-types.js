@@ -40,7 +40,7 @@
 */
 
 /**
-  Key derviation path (`master`, `owner`, `owner/active`, `active/mypermission`, ..)
+  Key derviation path (owner`, `active`, `active/mypermission`, `owner/coldkey2`..)
   @typedef {string} path
 */
 

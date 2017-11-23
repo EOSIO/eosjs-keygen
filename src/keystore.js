@@ -26,7 +26,7 @@ function KeyStore(userId) {
     Save a private or public key to the store in either RAM only or RAM and
     disk. Prevents certain key types from being saved on disk.
 
-    @arg {string} path - active/mypermission, owner, owner/active
+    @arg {string} path - active/mypermission, owner, active, ..
     @arg {string|array} key - wif, pubkey, or PrivateKey
     @arg {boolean} disk - save to local storage
 
@@ -73,7 +73,7 @@ function KeyStore(userId) {
 
     @arg {path|Array<path>|Set<path>}
 
-    @arg {boolean} keepPublicKey - Enable for better UX; show users keys they
+    @arg {boolean} keepPublicKeys - Enable for better UX; show users keys they
     have access too without requiring them to login. Logging in brings a
     private key online which is not necessary to see public information (balance,
     etc).
@@ -81,7 +81,7 @@ function KeyStore(userId) {
     The UX should implement this behavior in a way that is clear public keys
     are cached before enabling this feature.
   */
-  function remove(paths, keepPublicKey = false) {
+  function remove(paths, keepPublicKeys = false) {
     console.log('keystore ==> remove paths', paths)
 
     if(typeof paths === 'string') {
@@ -95,7 +95,7 @@ function KeyStore(userId) {
       state[userKeyWif] = null
       localStorage[userKeyWif] = null
 
-      if(!keepPublicKey) {
+      if(!keepPublicKeys) {
         const userKeyPub = userStorage.key(userId, 'kpath', 'pubkey', path)
         state[userKeyPub] = null
         localStorage[userKeyPub] = null
@@ -126,7 +126,7 @@ function KeyStore(userId) {
 
   /**
     @example getPublicKey('owner')
-    @example getPublicKey('owner/active')
+    @example getPublicKey('active')
     @example getPublicKey('myaccount/mypermission')
 
     @return {string} public key or null
@@ -141,7 +141,7 @@ function KeyStore(userId) {
     Return or derive a private key.  
 
     @example getPrivateKey('owner')
-    @example getPrivateKey('owner/active')
+    @example getPrivateKey('active')
     @example getPrivateKey('myaccount/mypermission')
 
     @return {string} wif or null

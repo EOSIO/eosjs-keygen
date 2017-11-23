@@ -9,7 +9,7 @@ describe('Generate', () => {
   it('authsByPath', () => {
     const paths = generate.authsByPath(accountPermissions)
     assert.deepEqual(
-      ['owner/active', 'active/mypermission', 'owner'],
+      ['active', 'active/mypermission', 'owner'],
       Object.keys(paths)
     )
   })

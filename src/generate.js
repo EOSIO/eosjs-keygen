@@ -45,6 +45,9 @@ function authsByPath(accountPermissions) {
       if(pathStr.indexOf('owner/active/') === 0) {
         // active is always a child of owner
         pathStr = pathStr.substring('owner/'.length)
+      } else if(pathStr === 'owner/active') {
+        // owner is implied, juse use active
+        pathStr = 'active'
       }
       auths[pathStr] = perm.required_auth
     }

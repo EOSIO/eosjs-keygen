@@ -8,12 +8,13 @@ describe('Validate', () => {
   it('path', () => {
     validate.path('owner') // better error than doesNotThrow
     assert.doesNotThrow(() => validate.path('owner'))
-    assert.doesNotThrow(() => validate.path('owner/active'))
+    assert.doesNotThrow(() => validate.path('active'))
     assert.doesNotThrow(() => validate.path('active/mypermission'))
     assert.doesNotThrow(() => validate.path('active'))
     assert.doesNotThrow(() => validate.path('active/mykey'))
     assert.throws(() => validate.path('active/mykey/active'), /duplicate/)
     assert.throws(() => validate.path('active/owner'), /owner is always the root/)
+    assert.throws(() => validate.path('owner/active'), /owner is implied, juse use active/)
     assert.throws(() => validate.path('owner/mykey/active'), /active is always first or second/)
   })
 
