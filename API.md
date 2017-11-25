@@ -1,7 +1,7 @@
 ## Functions
 
 <dl>
-<dt><a href="#Session">Session(userId, [config])</a></dt>
+<dt><a href="#Session">Session(accountName, [config])</a></dt>
 <dd><p>Provides private key management and storage.</p>
 </dd>
 </dl>
@@ -14,9 +14,9 @@
 </dd>
 <dt><a href="#wif">wif</a> : <code>string</code></dt>
 <dd><p><a href="https://en.bitcoin.it/wiki/Wallet_import_format">Wallet Import Format</a>
-    (5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp)</p>
+  (5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp)</p>
 </dd>
-<dt><a href="#PrivateKey">PrivateKey</a> : <code>object</code></dt>
+<dt><a href="#privateKey">privateKey</a> : <code>object</code></dt>
 <dd><p>Private key object from eosjs-ecc.</p>
 </dd>
 <dt><a href="#masterPrivateKey">masterPrivateKey</a> : <code>string</code></dt>
@@ -34,62 +34,96 @@
 <dt><a href="#parentPrivateKey">parentPrivateKey</a> : <code><a href="#masterPrivateKey">masterPrivateKey</a></code> | <code><a href="#wif">wif</a></code></dt>
 <dd><p>Master private key or one of its derived private keys.</p>
 </dd>
-<dt><a href="#path">path</a> : <code>string</code></dt>
-<dd><p>Key derviation path (<code>master</code>, <code>owner</code>, <code>owner/active</code>, <code>active/mypermission</code>, ..)</p>
-</dd>
-<dt><a href="#urlpath">urlpath</a> : <code>string</code></dt>
-<dd><p>A URL without the prefixing protocol, host, and /</p>
-</dd>
-<dt><a href="#accountPermissions">accountPermissions</a> : <code>object</code></dt>
+<dt><a href="#auth">auth</a> : <code>object</code></dt>
 <dd><p>Signing Keys and(or) Accounts each having a weight that when matched in
   the signatures should accumulate to meet or exceed the auth&#39;s total threshold.</p>
 </dd>
-<dt><a href="#minimatch">minimatch</a> : <code>string</code></dt>
-<dd><p>Glob matching expressions (<code>active/**</code>, <code>owner/*</code>).</p>
+<dt><a href="#accountPermissions">accountPermissions</a> : <code>object</code></dt>
+<dd><p>Permissions object from Eos blockchain obtained via get_account.</p>
+<p>  See chain API get_account =&gt; account.permissions.</p>
 </dd>
-<dt><a href="#UrlPathMatch">UrlPathMatch</a> : <code>string</code> | <code>RegExp</code></dt>
-<dd><p>A valid regular expression string or a regular expression object. If a string
-  is provided it is converted to a RegExp by inspecting and optionally adding
-  common suffixes and prefixes.</p>
-<p>  If a RegExp object is provided, it is used without modification.</p>
-</dd>
-<dt><a href="#UrlPathSet">UrlPathSet</a> : <code><a href="#UrlPathMatch">UrlPathMatch</a></code> | <code><a href="#UrlPathMatch">Array.&lt;UrlPathMatch&gt;</a></code></dt>
+<dt><a href="#keyPath">keyPath</a> : <code>string</code></dt>
 <dd></dd>
+<dt><a href="#minimatch">minimatch</a> : <code>string</code></dt>
+<dd><p>Glob matching expressions (<code>active</code>, <code>active/**</code>, <code>owner/*</code>).</p>
+</dd>
+<dt><a href="#keyPathMatcher">keyPathMatcher</a> : <code><a href="#minimatch">minimatch</a></code></dt>
+<dd><p>Key derviation path (<code>owner</code>, <code>active/*</code>, <code>active/**</code>, <code>active/mypermission</code>)</p>
+</dd>
+<dt><a href="#uriData">uriData</a> : <code>string</code></dt>
+<dd><p>A URI without the prefixing scheme, host, port.</p>
+</dd>
+<dt><a href="#uriMatcher">uriMatcher</a> : <code>string</code></dt>
+<dd><p>A valid regular expression string.  The provided string it modified when
+  it is converted to a RegExp object:</p>
+<ul>
+<li>A start of match is implied (<code>^</code> is always added, do not add one)</li>
+<li>Unless the uriPath ends with <code>$</code>, automatically matches query parameters
+and fragment (hash tag info).</li>
+<li>The RegExp that is created is always case-insensitive to help a
+non-canonical path match.  Uri paths should be canonical though.</li>
+</ul>
+</dd>
+<dt><a href="#uriMatchers">uriMatchers</a> : <code><a href="#uriMatcher">uriMatcher</a></code> | <code><a href="#uriMatcher">Array.&lt;uriMatcher&gt;</a></code></dt>
+<dd></dd>
+<dt><a href="#uriRule">uriRule</a> : <code>Object.&lt;keyPathMatcher, uriMatchers&gt;</code></dt>
+<dd></dd>
+<dt><a href="#uriRules">uriRules</a> : <code><a href="#uriRule">Object.&lt;uriRule&gt;</a></code></dt>
+<dd><p>Define rules that says which private keys may exist within given locations
+  of the application.  If a rule is not found or does not match, the session
+  will remove the key.  The UI can prompt the user to obtain the needed key
+  again.</p>
+<p>  For any non-trivial configuration, implementions should create a unit test
+  that will test the actual configuration used in the application
+  (use ./uri-rules.test.js as a template).</p>
+<p>  Paths imply that active is always derived from owner.  So, instead of writing
+  <code>owner/active/**</code> the path must be written as <code>active/**</code>.</p>
+</dd>
 </dl>
 
 <a name="Session"></a>
 
-## Session(userId, [config])
+## Session(accountName, [config])
 Provides private key management and storage.
 
 **Kind**: global function  
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| userId | <code>string</code> |  | An stable identifier (or hash) for the user. Make   sure the id is stored externally before it is used here.  The Id may   be created before a blockchain account name is available.  An account   name may be assigned later in the login function. |
+| accountName | <code>string</code> |  | Blockchain account name. |
 | [config] | <code>object</code> |  |  |
-| [config.timeout] | <code>number</code> | <code>30</code> | minutes |
-| [config.urlRules] | <code>Object.&lt;minimatch, UrlPathSet&gt;</code> |  | Specify which type   of private key will be available on certain pages of the application. |
+| [config.timeoutInMin] | <code>number</code> | <code>30</code> |  |
+| [config.uriRules] | [<code>uriRules</code>](#uriRules) |  | Specify which type of private key will   be available on certain pages of the application.  Lock it down as much as   possible and later re-prompt the user if a key is needed. |
 
 **Example**  
 ```js
+
 Session = require('eosjs-keygen')
 
-config = {
-  timeout: 30,
-  urlRules: {
-    'owner': 'account_recovery',
-    'owner/active': '@${accountName}/transfers',
-    'active/**': '@${accountName}'
+Session.generateMasterKeys.then(keys => {
+  // create blockchain account called 'myaccount'
+})
+
+// Todo, move to session-factory.js
+sessionConfig = {
+  timeoutInMin: 30,
+  uriRules: {
+    'owner' : '/account_recovery',
+    'active': '/(transfer|contracts)',
+    'active/**': '/producers'
   }
 }
 
-session = Session('unique_userId', config)
+// Todo, move to session-factory.js
+session = Session('myaccount', sessionConfig)
 
-session.login(...)
+eosjs.getAccount('myaccount').then(account => {
+  // Todo, move to session-factory.js
+  session.login('myaccount', account.permissions)
+})
 ```
 
-* [Session(userId, [config])](#Session)
+* [Session(accountName, [config])](#Session)
     * _static_
         * [.wipeAll](#Session.wipeAll)
         * [.generateMasterKeys(cpuEntropyBits)](#Session.generateMasterKeys) ⇒ <code>Promise</code>
@@ -110,8 +144,10 @@ Erase all traces of this session (for all users).
 ### Session.generateMasterKeys(cpuEntropyBits) ⇒ <code>Promise</code>
 New accounts will call this to generate a new keyset..
 
-  A password manager or backup should save the returned
-  {masterPrivateKey} for later login.
+  A password manager or backup should save (at the very minimum) the returned
+  {masterPrivateKey} for later login.  The owner and active can be re-created
+  from the masterPrivateKey.  It is still a good idea to save all information
+  in the backup for easy reference.
 
 **Kind**: static method of [<code>Session</code>](#Session)  
 
@@ -123,16 +159,20 @@ New accounts will call this to generate a new keyset..
 ```js
 {
   masterPrivateKey, // <= place in a password input field (password manager)
-  privateKeys: {owner, active},
-  publicKeys: {owner, active}
+  privateKeys: {owner, active}, // <= derived from masterPrivateKey
+  publicKeys: {owner, active} // <= derived from masterPrivateKey
 }
 ```
 <a name="Session..login"></a>
 
 ### Session~login(parentPrivateKey, accountPermissions, [saveLoginsByPath])
 Creates private keys and saves them in the keystore for use on demand.  This
-    may be called to add additional keys which were removed as a result of Url
+    may be called to add additional keys which were removed as a result of Uri
     navigation or from calling logout.
+
+    It is possible for the same user to login more than once using a different
+    parentPrivateKey (master password or private key).  The purpose is to add
+    additional keys to the session.
 
 **Kind**: inner method of [<code>Session</code>](#Session)  
 **Throws**:
@@ -144,7 +184,7 @@ Creates private keys and saves them in the keystore for use on demand.  This
 | --- | --- | --- |
 | parentPrivateKey | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password (masterPrivateKey),     active, owner, or other permission key. |
 | accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | Permissions object from Eos     blockchain via get_account.  This is used to validate the parentPrivateKey     and derive additional permission keys.  This allows this session     to detect incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
-| [saveLoginsByPath] | [<code>Array.&lt;minimatch&gt;</code>](#minimatch) | These permissions will be     saved to disk.  An exception is thrown if a master, owner or active key     save is attempted. (example: ['**', ..]). A timeout will not     expire, logout to remove. |
+| [saveLoginsByPath] | [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These permissions will be     saved to disk. (example: [`active/**`, ..]). A timeout will not     expire, logout to remove.     An exception is thrown if an owner or active key save is attempted. |
 
 <a name="Session..logout"></a>
 
@@ -161,7 +201,7 @@ Removes any saved keys on disk and clears keys in memory.  Call only when
 <a name="Session..keepAlive"></a>
 
 ### Session~keepAlive()
-Keep alive (prevent expiration).  Called automatically if Url navigation
+Keep alive (prevent expiration).  Called automatically if Uri navigation
     happens or keys are obtained from the keyStore.  It may be necessary
     to call this manually.
 
@@ -176,12 +216,12 @@ Public Key (EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV)
 
 ## wif : <code>string</code>
 [Wallet Import Format](https://en.bitcoin.it/wiki/Wallet_import_format)
-    (5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp)
+  (5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp)
 
 **Kind**: global typedef  
-<a name="PrivateKey"></a>
+<a name="privateKey"></a>
 
-## PrivateKey : <code>object</code>
+## privateKey : <code>object</code>
 Private key object from eosjs-ecc.
 
 **Kind**: global typedef  
@@ -212,25 +252,9 @@ Spending key.  Has the authority to do everything except account recovery.
 Master private key or one of its derived private keys.
 
 **Kind**: global typedef  
-<a name="path"></a>
+<a name="auth"></a>
 
-## path : <code>string</code>
-Key derviation path (`master`, `owner`, `owner/active`, `active/mypermission`, ..)
-
-**Kind**: global typedef  
-<a name="urlpath"></a>
-
-## urlpath : <code>string</code>
-A URL without the prefixing protocol, host, and /
-
-**Kind**: global typedef  
-**Example**  
-```js
-['account_recovery', 'producers', '@[\w\.]']
-```
-<a name="accountPermissions"></a>
-
-## accountPermissions : <code>object</code>
+## auth : <code>object</code>
 Signing Keys and(or) Accounts each having a weight that when matched in
   the signatures should accumulate to meet or exceed the auth's total threshold.
 
@@ -246,13 +270,15 @@ required_auth: {
   ],
   accounts: []
 }
+```
+<a name="accountPermissions"></a>
 
-/**
-  Permissions object from Eos blockchain obtained via get_account.
+## accountPermissions : <code>object</code>
+Permissions object from Eos blockchain obtained via get_account.
+
   See chain API get_account => account.permissions.
 
-  
-```
+**Kind**: global typedef  
 **Example**  
 ```js
 const accountPermissions = [{
@@ -293,37 +319,114 @@ const accountPermissions = [{
   }
 }]
 ```
+<a name="keyPath"></a>
+
+## keyPath : <code>string</code>
+**Kind**: global typedef  
+**See**: [validate.path(keyPath)](./validate.js)  
+**Example**  
+```js
+'owner', 'active', 'active/mypermission'
+```
 <a name="minimatch"></a>
 
 ## minimatch : <code>string</code>
-Glob matching expressions (`active/**`, `owner/*`).
+Glob matching expressions (`active`, `active/**`, `owner/*`).
 
 **Kind**: global typedef  
 **See**: https://www.npmjs.com/package/minimatch  
-<a name="UrlPathMatch"></a>
+<a name="keyPathMatcher"></a>
 
-## UrlPathMatch : <code>string</code> \| <code>RegExp</code>
-A valid regular expression string or a regular expression object. If a string
-  is provided it is converted to a RegExp by inspecting and optionally adding
-  common suffixes and prefixes.
+## keyPathMatcher : [<code>minimatch</code>](#minimatch)
+Key derviation path (`owner`, `active/*`, `active/**`, `active/mypermission`)
 
-  If a RegExp object is provided, it is used without modification.
+**Kind**: global typedef  
+<a name="uriData"></a>
+
+## uriData : <code>string</code>
+A URI without the prefixing scheme, host, port.
 
 **Kind**: global typedef  
 **Example**  
 ```js
-// A string is handled as follows..
-
-// If it does not sart with ^, ensure match starts with /
-const prefix = re.charAt(0) === '^' ? '' : '^/'
-
-// If it does not end with $, allow any valid Url suffix after your path
-const suffix = re.charAt(re.length - 1) === '$' ? '' : '([/\?#].*)?$'
-
-// Path matches are case in-sensitive (per the url specification)
-return new RegExp(prefix + re + suffix, 'i')
+'/producers', '/account_recovery#name=..'
 ```
-<a name="UrlPathSet"></a>
+<a name="uriMatcher"></a>
 
-## UrlPathSet : [<code>UrlPathMatch</code>](#UrlPathMatch) \| [<code>Array.&lt;UrlPathMatch&gt;</code>](#UrlPathMatch)
+## uriMatcher : <code>string</code>
+A valid regular expression string.  The provided string it modified when
+  it is converted to a RegExp object:
+
+  - A start of match is implied (`^` is always added, do not add one)
+  - Unless the uriPath ends with `$`, automatically matches query parameters
+    and fragment (hash tag info).
+  - The RegExp that is created is always case-insensitive to help a
+    non-canonical path match.  Uri paths should be canonical though.
+
 **Kind**: global typedef  
+**Example**  
+```js
+'/(transfer|contracts)', '/bare-uri$'
+  
+```
+**Example**  
+```js
+function createPathMatcher(path) {
+  // Ensure match starts at the begining
+  const prefix = '^'
+
+  // If path matcher does not end with $, allow Uri query and fragment
+  const suffix = path.charAt(path.length - 1) === '$' ? '' : '\/?([\?#].*)?$'
+
+  // Path matches are case in-sensitive
+  return new RegExp(prefix + path + suffix, 'i')
+}
+```
+<a name="uriMatchers"></a>
+
+## uriMatchers : [<code>uriMatcher</code>](#uriMatcher) \| [<code>Array.&lt;uriMatcher&gt;</code>](#uriMatcher)
+**Kind**: global typedef  
+<a name="uriRule"></a>
+
+## uriRule : <code>Object.&lt;keyPathMatcher, uriMatchers&gt;</code>
+**Kind**: global typedef  
+**Example**  
+```js
+{
+  'owner': '/account_recovery$', // <= $ prevents query or fragment params
+  'active': ['/transfer', '/contracts']
+}
+```
+<a name="uriRules"></a>
+
+## uriRules : [<code>Object.&lt;uriRule&gt;</code>](#uriRule)
+Define rules that says which private keys may exist within given locations
+  of the application.  If a rule is not found or does not match, the session
+  will remove the key.  The UI can prompt the user to obtain the needed key
+  again.
+
+  For any non-trivial configuration, implementions should create a unit test
+  that will test the actual configuration used in the application
+  (use ./uri-rules.test.js as a template).
+
+  Paths imply that active is always derived from owner.  So, instead of writing
+  `owner/active/**` the path must be written as `active/**`.
+
+**Kind**: global typedef  
+**Example**  
+```js
+uriRules = { // Hypothetical examples
+  // Allow owner and all derived keys (including active)
+  'owner': '/account_recovery',
+
+  // Allow active key (and any derived child)
+  'active': '/(transfer|contracts)',
+
+  // Allow keys derived from active (but not active itself)
+  'active/**': '/producers',
+
+  // If user-provided or unaudited content could be loaded in a given
+  // page, make sure the root active key is not around on these pages.
+  'active/**': '/@[\\w\\.]'
+}
+```

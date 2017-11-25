@@ -16,18 +16,18 @@ describe('Generate', () => {
 
   it('keysByPath', () => {
     const master = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
-    generate.keysByPath(master, accountPermissions)
+    const keyPathPrivateKey = generate.keysByPath(master, accountPermissions)
+    // console.log('keyPathPrivateKey', keyPathPrivateKey)
   })
 
-  it('keyGen', () => {
-    const keys = generate.genKeys(PrivateKey.randomKey(0))
+  it('genKeys (create)', () => {
+    const keys = generate.genKeys(null, 0)
     checkKeySet(keys)
   })
 
-  // it('getEosKeys', () => {
-  //   const testPrivate = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
-  //   const keys = gen.getEosKeys(testPrivate)
-  //   checkKeySet(keys)
-  // })
-
+  it('genKeys (re-construct)', () => {
+    const master = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
+    const keys = generate.genKeys(master, 0)
+    checkKeySet(keys)
+  })
 })

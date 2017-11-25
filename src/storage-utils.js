@@ -19,12 +19,12 @@ function Storage(namespace) {
     @throws {AssertionError} immutable
   */
   function save(state, key, value, immutable = true) {
-    assert.equal('string', typeof key, 'key')
+    assert.equal(typeof key, 'string', 'key')
     if(value == null) {
       return
     }
 
-    assert.equal('string', typeof value, 'value')
+    assert.equal(typeof value, 'string', 'value')
 
     const existing = state[key]
     const dirty = existing != value

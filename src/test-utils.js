@@ -39,15 +39,15 @@ const accountPermissions = [{
 }]
 
 function checkKeySet(keys) {
-  assert.equal('string', typeof keys.masterPrivateKey, 'keys.masterPrivateKey')
+  assert.equal(typeof keys.masterPrivateKey, 'string', 'keys.masterPrivateKey')
 
-  assert.equal('object', typeof keys.privateKeys, 'keys.privateKeys')
-  assert.equal('string', typeof keys.privateKeys.owner, 'keys.privateKeys.owner')
-  assert.equal('string', typeof keys.privateKeys.active, 'keys.privateKeys.active')
+  assert.equal(typeof keys.privateKeys, 'object', 'keys.privateKeys')
+  assert.equal(typeof keys.privateKeys.owner, 'string', 'keys.privateKeys.owner')
+  assert.equal(typeof keys.privateKeys.active, 'string', 'keys.privateKeys.active')
 
-  assert.equal('object', typeof keys.publicKeys, 'keys.publicKeys')
-  assert.equal('string', typeof keys.publicKeys.owner, 'keys.publicKeys.owner')
-  assert.equal('string', typeof keys.publicKeys.active, 'keys.publicKeys.active')
+  assert.equal(typeof keys.publicKeys, 'object', 'keys.publicKeys')
+  assert.equal(typeof keys.publicKeys.owner, 'string', 'keys.publicKeys.owner')
+  assert.equal(typeof keys.publicKeys.active, 'string', 'keys.publicKeys.active')
 }
 
 module.exports = {

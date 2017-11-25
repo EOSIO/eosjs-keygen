@@ -2,7 +2,7 @@ const assert = require('assert')
 
 const generate = require('./generate')
 const KeyStore = require('./keystore')
-const UrlRules = require('./url-rules')
+const UriRules = require('./uri-rules')
 const validate = require('./validate')
 const {PrivateKey} = require('eosjs-ecc')
 const history = require('./config').history
@@ -12,57 +12,67 @@ module.exports = Session
 /**
   Provides private key management and storage.
 
-  @arg {string} userId - An stable identifier (or hash) for the user. Make
-  sure the id is stored externally before it is used here.  The Id may
-  be created before a blockchain account name is available.  An account
-  name may be assigned later in the login function.
+  @arg {string} accountName - Blockchain account name.
 
   @arg {object} [config]
-  @arg {number} [config.timeout = 30] - minutes
-  @arg {Object<minimatch, UrlPathSet>} [config.urlRules] - Specify which type
-  of private key will be available on certain pages of the application.  Lock
-  it down as much as possible and the keystore will figure out how to
-  generate and hold keys as needed.
+  @arg {number} [config.timeoutInMin = 30]
+  @arg {uriRules} [config.uriRules] - Specify which type of private key will
+  be available on certain pages of the application.  Lock it down as much as
+  possible and later re-prompt the user if a key is needed.
 
 @example
 ```js
+
 Session = require('eosjs-keygen')
 
-config = {
-  timeout: 30,
-  urlRules: {
-    'active': '/@myaccount/transfers',
-    'active/**': '/@myaccount/contracts',
-    'owner': '/@myaccount/account_recovery'
+Session.generateMasterKeys.then(keys => {
+  // create blockchain account called 'myaccount'
+})
+
+// Todo, move to session-factory.js
+sessionConfig = {
+  timeoutInMin: 30,
+  uriRules: {
+    'owner' : '/account_recovery',
+    'active': '/(transfer|contracts)',
+    'active/**': '/producers'
   }
 }
 
-session = Session('unique_userId', config)
+// Todo, move to session-factory.js
+session = Session('myaccount', sessionConfig)
 
-session.login(...)
+eosjs.getAccount('myaccount').then(account => {
+  // Todo, move to session-factory.js
+  session.login('myaccount', account.permissions)
+})
 ```
 */
-function Session(userId, config = {}) {
-  assert.equal('string', typeof userId, 'userId')
-  assert.equal('object', typeof config, 'config')
+function Session(accountName, config = {}) {
+  assert.equal(typeof accountName, 'string', 'accountName')
+  assert.equal(typeof config, 'object', 'config')
 
   const configDefaults = {
-    urlRules: {},
-    timeout: 30
+    uriRules: {},
+    timeoutInMin: 30
   }
 
   config = Object.assign({}, configDefaults, config)
 
-  const urlRules = UrlRules(config.urlRules)
-  const keyStore = KeyStore(userId)
+  const uriRules = UriRules(config.uriRules)
+  const keyStore = KeyStore(accountName)
 
   let expireAt, expireInterval
   let unlistenHistory
   
   /**
     Creates private keys and saves them in the keystore for use on demand.  This
-    may be called to add additional keys which were removed as a result of Url
+    may be called to add additional keys which were removed as a result of Uri
     navigation or from calling logout.
+
+    It is possible for the same user to login more than once using a different
+    parentPrivateKey (master password or private key).  The purpose is to add
+    additional keys to the session.
 
     @arg {parentPrivateKey} parentPrivateKey - Master password (masterPrivateKey),
     active, owner, or other permission key.
@@ -73,10 +83,11 @@ function Session(userId, config = {}) {
     to detect incorrect passwords early before trying to sign a transaction.
     See Chain API `get_account => account.permissions`.
    
-    @arg {Array<minimatch>} [saveLoginsByPath] - These permissions will be
-    saved to disk.  An exception is thrown if a master, owner or active key
-    save is attempted. (example: ['**', ..]). A timeout will not
+    @arg {Array<keyPathMatcher>} [saveLoginsByPath] - These permissions will be
+    saved to disk. (example: [`active/**`, ..]). A timeout will not
     expire, logout to remove.
+
+    An exception is thrown if an owner or active key save is attempted.
 
     @throws {Error} 'invalid login'
   */
@@ -97,11 +108,11 @@ function Session(userId, config = {}) {
     const authsByPath = generate.authsByPath(accountPermissions)
 
     const pathsForAccount = Object.keys(authsByPath)
-    const pathsForUrl = urlRules.check(currentUrl(), pathsForAccount)
+    const pathsForUrl = uriRules.check(currentUriPath(), pathsForAccount)
 
     // keyStore.remove(pathsForUrl.deny/*, keepPublicKeys*/)
 
-    // const loginPrivate = generate.keysByPath(pathsForUrl.allow)
+    // const loginPrivate = generate.keysByPath(pathsForUrl.allow, authsByPath)
     // const keys = generate.keysByPath(
     //   parentPrivateKey,
     //   accountPermissions,
@@ -119,11 +130,11 @@ function Session(userId, config = {}) {
 
       // Prevent certain private keys from being available to high-risk pages.
       const paths = keyStore.getKeyPaths().wif
-      const pathsToPurge = urlRules.check(paths, currentUrl())
+      const pathsToPurge = uriRules.check(paths, currentUriPath())
       keyStore.remove(pathsToPurge/*, keepPublicKeys*/)
     })
 
-    if(config.timeout != null) {
+    if(config.timeoutInMin != null) {
       keepAlive()
       function tick() {
         if(timeUntilExpire() === 0) {
@@ -132,7 +143,7 @@ function Session(userId, config = {}) {
       }
 
       // A small expireIntervalTime may be used for unit testing
-      const expireIntervalTime = Math.min(sec, config.timeout)
+      const expireIntervalTime = Math.min(sec, config.timeoutInMin)
       expireInterval = setInterval(tick, expireIntervalTime)
     }
   }
@@ -160,12 +171,12 @@ function Session(userId, config = {}) {
   }
 
   /**
-    Keep alive (prevent expiration).  Called automatically if Url navigation
+    Keep alive (prevent expiration).  Called automatically if Uri navigation
     happens or keys are obtained from the keyStore.  It may be necessary
     to call this manually.
   */
   function keepAlive() {
-    expireAt = Date.now() + config.timeout * min
+    expireAt = Date.now() + config.timeoutInMin * min
   }
 
   /** @private */
@@ -181,17 +192,18 @@ function Session(userId, config = {}) {
 }
 
 /** @private */
-function currentUrl() {
+function currentUriPath() {
   const location = history.location
-  const url = `${location.pathname}${location.search}${location.hash}`
-  return url
+  return `${location.pathname}${location.search}${location.hash}`
 }
 
 /**
   New accounts will call this to generate a new keyset..
 
-  A password manager or backup should save the returned
-  {masterPrivateKey} for later login.
+  A password manager or backup should save (at the very minimum) the returned
+  {masterPrivateKey} for later login.  The owner and active can be re-created
+  from the masterPrivateKey.  It is still a good idea to save all information
+  in the backup for easy reference.
 
   @arg {number} cpuEntropyBits - Use 0 for fast testing, 128 (default) takes a
   second
@@ -200,8 +212,8 @@ function currentUrl() {
   @example
 {
   masterPrivateKey, // <= place in a password input field (password manager)
-  privateKeys: {owner, active},
-  publicKeys: {owner, active}
+  privateKeys: {owner, active}, // <= derived from masterPrivateKey
+  publicKeys: {owner, active} // <= derived from masterPrivateKey
 }
 */
 Session.generateMasterKeys = function(cpuEntropyBits) {

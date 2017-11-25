@@ -6,18 +6,15 @@ const userStorage = require('./storage-utils')('ustor')
 const validate = require('./validate')
 
 /**
-  Rules and storage for private keys.
+  Storage for private and public keys.
 
-  This keyStore does not query the blockchain or any external services.  Removing
-  keys here does not affect the blockchain.
+  This keyStore does not query the blockchain or any external services.
+  Removing keys here does not affect the blockchain.
 */
 module.exports = KeyStore
 
-/**
-  @namespace session.keyStore
-*/
-function KeyStore(userId) {
-  assert.equal('string', typeof userId, 'userId')
+function KeyStore(accountName) {
+  assert.equal(typeof accountName, 'string', 'accountName')
 
   /** @private */
   let state = {}
@@ -26,15 +23,16 @@ function KeyStore(userId) {
     Save a private or public key to the store in either RAM only or RAM and
     disk. Prevents certain key types from being saved on disk.
 
-    @arg {string} path - active/mypermission, owner, active, ..
-    @arg {string|array} key - wif, pubkey, or PrivateKey
-    @arg {boolean} disk - save to local storage
+    @arg {keyPath} path - active/mypermission, owner, active, ..
+    @arg {string} key - wif, pubkey, or privateKey
+    @arg {boolean} disk - save to persistent storage (localStorage)
 
-    @throws {AssertionError} path error or owner/* disk save attempted
+    @throws {AssertionError} path error or active, owner/* disk save attempted
+
+    @return {{wif, pubkey}}
   */
   function save(path, key, disk = false) {
     validate.path(path)
-    assert(path !== 'master', 'master key should not be saved anywhere')
 
     const keyType = validate.keyType(key)
     assert(/^wif|pubkey|privateKey$/.test(keyType),
@@ -44,6 +42,8 @@ function KeyStore(userId) {
       assert(path !== 'owner', 'owner key should not be stored on disk')
       assert(path.indexOf('owner/') === 0,
         'owner derived keys should not be stored on disk')
+
+      assert(path !== 'active', 'active key should not be stored on disk')
     }
 
     const wif =
@@ -56,8 +56,8 @@ function KeyStore(userId) {
       keyType === 'privateKey' ? key.toPublic().toString() :
       ecc.privateToPublic(wif)
   
-    const userKeyWif = userStorage.key(userId, 'kpath', 'wif', path)
-    const userKeyPub = userStorage.key(userId, 'kpath', 'pubkey', path)
+    const userKeyWif = userStorage.key(accountName, 'kpath', 'wif', path)
+    const userKeyPub = userStorage.key(accountName, 'kpath', 'pubkey', path)
 
     userStorage.save(state, userKeyWif, wif)
     userStorage.save(state, userKeyPub, pubkey)
@@ -66,17 +66,18 @@ function KeyStore(userId) {
       userStorage.save(localStorage, userKeyWif, wif)
       userStorage.save(localStorage, userKeyPub, pubkey)
     }
+
+    return {wif, pubkey}
   }
 
   /**
     Remove a key or keys from this key store (ram and disk).
 
-    @arg {path|Array<path>|Set<path>}
+    @arg {keyPath|Array<keyPath>|Set<keyPath>}
 
     @arg {boolean} keepPublicKeys - Enable for better UX; show users keys they
     have access too without requiring them to login. Logging in brings a
-    private key online which is not necessary to see public information (balance,
-    etc).
+    private key online which is not necessary to see public information.
 
     The UX should implement this behavior in a way that is clear public keys
     are cached before enabling this feature.
@@ -91,12 +92,12 @@ function KeyStore(userId) {
     paths.forEach(path => {validate.path(paths)})
 
     for(const path of paths) {
-      const userKeyWif = userStorage.key(userId, 'kpath', 'wif', path)
+      const userKeyWif = userStorage.key(accountName, 'kpath', 'wif', path)
       state[userKeyWif] = null
       localStorage[userKeyWif] = null
 
       if(!keepPublicKeys) {
-        const userKeyPub = userStorage.key(userId, 'kpath', 'pubkey', path)
+        const userKeyPub = userStorage.key(accountName, 'kpath', 'pubkey', path)
         state[userKeyPub] = null
         localStorage[userKeyPub] = null
       }
@@ -112,7 +113,7 @@ function KeyStore(userId) {
   function getKeyPaths() {
     const pubkey = new Set()
     const wif = new Set()
-    userStorage.query(localStorage, [userId, 'kpath'], ([type, path]) => {
+    userStorage.query(localStorage, [accountName, 'kpath'], ([type, path]) => {
       if(type === 'pubkey') {
         pubkey.add(path)
       } else if(type === 'wif') {
@@ -125,30 +126,23 @@ function KeyStore(userId) {
   }
 
   /**
-    @example getPublicKey('owner')
-    @example getPublicKey('active')
-    @example getPublicKey('myaccount/mypermission')
-
-    @return {string} public key or null
+    @arg {keyPath}
+    @return {pubkey} public key or null
   */
   function getPublicKey(path) {
     validate.path(path)
-    const userKeyPub = userStorage.key(userId, 'kpath', 'pubkey', path)
+    const userKeyPub = userStorage.key(accountName, 'kpath', 'pubkey', path)
     return state[userKeyPub] ? state[userKeyPub] : localStorage[userKeyPub]
   }
 
   /**
-    Return or derive a private key.  
-
-    @example getPrivateKey('owner')
-    @example getPrivateKey('active')
-    @example getPrivateKey('myaccount/mypermission')
-
-    @return {string} wif or null
+    Return or derive a private key.
+    @arg {keyPath}
+    @return {wif} null
   */
   function getPrivateKey(path) {
     validate.path(path)
-    const userKeyWif = userStorage.key(userId, 'kpath', 'wif', path)
+    const userKeyWif = userStorage.key(accountName, 'kpath', 'wif', path)
     return state[userKeyPub] ? state[userKeyPub] : localStorage[userKeyPub]
   }
 
@@ -160,7 +154,7 @@ function KeyStore(userId) {
   /** Erase all keys for this user. */
   function wipeUser() {
     state = {}
-    const prefix = userStorage.key(userId)
+    const prefix = userStorage.key(accountName)
     for(const key in localStorage) {
       if(key.indexOf(prefix) === 0) {
         delete localStorage[key]

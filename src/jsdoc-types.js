@@ -1,53 +1,48 @@
 
 /**
   Public Key (EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV)
+
   @typedef {string} pubkey
 */
 
 /**
-    [Wallet Import Format](https://en.bitcoin.it/wiki/Wallet_import_format)
-    (5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp)
-    @typedef {string} wif
+  [Wallet Import Format](https://en.bitcoin.it/wiki/Wallet_import_format)
+  (5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp)
+
+  @typedef {string} wif
 */
 
 /**
-    Private key object from eosjs-ecc.
+  Private key object from eosjs-ecc.
 
-    @typedef {object} PrivateKey
+  @typedef {object} privateKey
 */
 
 /**
   Master Private Key.  Strong random key used to derive all other key types.
   Has a 'PW' prefix followed by a valid wif. (`'PW' + wif ===
   'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'`)
+
   @typedef {string} masterPrivateKey
 */
 
 /**
   Cold storage / recovery key.  Has authoritiy to do everything including
   account recovery.
+
   @typedef {wif} owner
 */
 
 /**
   Spending key.  Has the authority to do everything except account recovery.
+
   @typedef {wif} active
 */
 
 /**
   Master private key or one of its derived private keys.
+
   @typedef {masterPrivateKey|wif} parentPrivateKey
-*/
-
-/**
-  Key derviation path (owner`, `active`, `active/mypermission`, `owner/coldkey2`..)
-  @typedef {string} path
-*/
-
-/**
-  A URL without the prefixing protocol, host, and /
-  @typedef {string} urlpath
-  @example ['account_recovery', 'producers', '@[\w\.]']
 */
 
 /**
@@ -55,8 +50,8 @@
   the signatures should accumulate to meet or exceed the auth's total threshold.
 
   @typedef {object} auth
-  @example
-required_auth: {
+
+  @example required_auth: {
   threshold: 1,
   keys: [{
       key: 'EOS78Cs5HPKY7HKHrSMnR76uj7yeajPuNwSH1Fsria3sJuufwE3Zd',
@@ -65,14 +60,16 @@ required_auth: {
   ],
   accounts: []
 }
+*/
 
 /**
   Permissions object from Eos blockchain obtained via get_account.
+
   See chain API get_account => account.permissions.
 
   @typedef {object} accountPermissions
 
-@example const accountPermissions = [{
+  @example const accountPermissions = [{
   perm_name: 'active',
   parent: 'owner',
   required_auth: {
@@ -112,32 +109,94 @@ required_auth: {
 */
 
 /**
-  Glob matching expressions (`active/**`, `owner/*`).
+  @see [validate.path(keyPath)](./validate.js)
+  
+  @typedef {string} keyPath
+  @example 'owner', 'active', 'active/mypermission'
+*/
+
+/**
+  Glob matching expressions (`active`, `active/**`, `owner/*`).
   @see https://www.npmjs.com/package/minimatch
   @typedef {string} minimatch
 */
 
 /**
-  A valid regular expression string or a regular expression object. If a string
-  is provided it is converted to a RegExp by inspecting and optionally adding
-  common suffixes and prefixes.
-
-  If a RegExp object is provided, it is used without modification.  
-
-  @typedef {string|RegExp} UrlPathMatch
-  @example
-// A string is handled as follows..
-
-// If it does not sart with ^, ensure match starts with /
-const prefix = re.charAt(0) === '^' ? '' : '^/'
-
-// If it does not end with $, allow any valid Url suffix after your path
-const suffix = re.charAt(re.length - 1) === '$' ? '' : '([/\?#].*)?$'
-
-// Path matches are case in-sensitive (per the url specification)
-return new RegExp(prefix + re + suffix, 'i')
+  Key derviation path (`owner`, `active/*`, `active/**`, `active/mypermission`)
+  @typedef {minimatch} keyPathMatcher
 */
 
 /**
-  @typedef {UrlPathMatch|Array<UrlPathMatch>} UrlPathSet
+  A URI without the prefixing scheme, host, port.
+
+  @typedef {string} uriData
+  @example '/producers', '/account_recovery#name=..'
+*/
+
+/**
+  A valid regular expression string.  The provided string it modified when
+  it is converted to a RegExp object:
+
+  - A start of match is implied (`^` is always added, do not add one)
+  - Unless the uriPath ends with `$`, automatically matches query parameters
+    and fragment (hash tag info).
+  - The RegExp that is created is always case-insensitive to help a
+    non-canonical path match.  Uri paths should be canonical though.
+
+  @typedef {string} uriMatcher
+
+  @example '/(transfer|contracts)', '/bare-uri$'
+  @example function createPathMatcher(path) {
+  // Ensure match starts at the begining
+  const prefix = '^'
+
+  // If path matcher does not end with $, allow Uri query and fragment
+  const suffix = path.charAt(path.length - 1) === '$' ? '' : '\/?([\?#].*)?$'
+
+  // Path matches are case in-sensitive
+  return new RegExp(prefix + path + suffix, 'i')
+}
+*/
+
+/**
+  @typedef {uriMatcher|Array<uriMatcher>} uriMatchers
+*/
+
+/**
+  @typedef {Object<keyPathMatcher, uriMatchers>} uriRule
+  @example {
+  'owner': '/account_recovery$', // <= $ prevents query or fragment params
+  'active': ['/transfer', '/contracts']
+}
+*/
+
+/**
+  @typedef {Object<uriRule>} uriRules
+
+  Define rules that says which private keys may exist within given locations
+  of the application.  If a rule is not found or does not match, the session
+  will remove the key.  The UI can prompt the user to obtain the needed key
+  again.
+
+  For any non-trivial configuration, implementions should create a unit test
+  that will test the actual configuration used in the application
+  (use ./uri-rules.test.js as a template).
+
+  Paths imply that active is always derived from owner.  So, instead of writing
+  `owner/active/**` the path must be written as `active/**`.
+
+  @example uriRules = { // Hypothetical examples
+  // Allow owner and all derived keys (including active)
+  'owner': '/account_recovery',
+
+  // Allow active key (and any derived child)
+  'active': '/(transfer|contracts)',
+
+  // Allow keys derived from active (but not active itself)
+  'active/**': '/producers',
+
+  // If user-provided or unaudited content could be loaded in a given
+  // page, make sure the root active key is not around on these pages.
+  'active/**': '/@[\\w\\.]'
+}
 */

@@ -9,13 +9,14 @@ module.exports = {
   genKeys,
 }
 
+/** @typedef {Object<keyPath, auth>} keyPathAuth */
 /**
   @arg {accountPermissions}
-  @return {object<path, auth>}
+  @return {object<keyPathAuth>}
 */
 function authsByPath(accountPermissions) {
   assert(Array.isArray(accountPermissions), 'accountPermissions is an array')
-  accountPermissions.forEach(perm => assert.equal('object', typeof perm,
+  accountPermissions.forEach(perm => assert.equal(typeof perm, 'object',
     'accountPermissions is an array of objects'))
 
   const byName = {} // Index by permission name
@@ -56,29 +57,31 @@ function authsByPath(accountPermissions) {
   return auths
 }
 
-/** @typedef {{path, PrivateKey}} PrivateKeyPath */
+/** @typedef {Object<keyPath, privateKey>} keyPathPrivateKey */
 
 /**
-  Derive key path / key pairs for a given parent key and a blockchain account.
+  Derive key path and its corresponding privateKey for a given parent key
+  and a blockchain account.
 
-  @arg {accountPermissions} - blockchain account.permissions (see typedef in ./index.js)
   @arg {parentPrivateKey} parentPrivateKey - Master password, active, owner, or
     other key in the account's permission.
 
-  @return {Array<PrivateKeyPath>} - Selected keys or empty array for an invalid login
+  @arg {object<keyPathAuth>} pathsByAuth - see generate.authsByPath(..)
+
+  @return {Array<keyPathPrivateKey>} - Selected keys or empty array
 */
-function keysByPath(parentPrivateKey, accountPermissions) {
+function keysByPath(parentPrivateKey, pathsByAuth) {
   const keyType = validate.keyType(parentPrivateKey)
   assert(/master|wif|privateKey/.test(keyType),
     'parentPrivateKey is a masterPrivateKey or private key')
 
-  assert(Array.isArray(accountPermissions), 'accountPermissions is an array')
-  accountPermissions.forEach(perm => assert.equal('object', typeof perm,
-    'accountPermissions is an array of objects'))
+  // assert(Array.isArray(accountPermissions), 'accountPermissions is an array')
+  // accountPermissions.forEach(perm => assert.equal(typeof perm, 'object', 
+  //   'accountPermissions is an array of objects'))
 
   const result = []
   if(keyType === 'master') {
-    const masterPrivateKey = parentPrivateKey.substring(2)
+    const masterPrivateKey = parentPrivateKey
     const loginKeys = genKeys(masterPrivateKey)
     // const roleKeys = keysByRole(acccountPermissions, 'owner')
     // const okeys.publicKeys.owner === 
@@ -89,20 +92,24 @@ function keysByPath(parentPrivateKey, accountPermissions) {
 //   key calculation is expensive).
 
 /**
-  @arg {wif} [masterPrivateKey = null] When null, a random key is created..
+  @arg {masterPrivateKey} [masterPrivateKey = null] When null, a random key
+  is created..
+
   @arg {number} [cpuEntropyBits = null] null to use CPU entropy or 0 for
   fast test keys
 */
 function genKeys(masterPrivateKey, cpuEntropyBits) {
   if(masterPrivateKey == null) {
     masterPrivateKey = PrivateKey.randomKey(cpuEntropyBits)
+  } else {
+    assert(validate.isMasterKey(masterPrivateKey), 'masterPrivateKey')
+    masterPrivateKey = PrivateKey(masterPrivateKey.substring('PW'.length))
+    assert(masterPrivateKey != null, 'masterPrivateKey is a valid private key')
   }
-  masterPrivateKey = PrivateKey(masterPrivateKey)
-  assert(masterPrivateKey != null,
-    'masterPrivateKey is a valid private key')
 
   const ownerPrivate = masterPrivateKey.getChildKey('owner')
   const activePrivate = ownerPrivate.getChildKey('active')
+
   return {
     masterPrivateKey: `PW${masterPrivateKey.toWif()}`,
     privateKeys: {
@@ -115,12 +122,3 @@ function genKeys(masterPrivateKey, cpuEntropyBits) {
     }
   }
 }
-
-// delete soon:
-// /**
-//   Login, use this to derive same keyset obtained from generateMasterKeys..
-// */
-// function getEosKeys(masterPrivateKey) {
-//   validate.checkMasterPrivateKey(masterPrivateKey)
-//   return genKeys(PrivateKey(masterPrivateKey.substring(2)))
-// }
