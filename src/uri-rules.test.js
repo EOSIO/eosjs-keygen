@@ -50,7 +50,7 @@ describe('Path Rules', () => {
 describe('Uri Rules', () => {
   const fixtures = [
     {
-      path: 'start-with',
+      rule: 'start-with',
       allow: [
         'start-with', 'start-with/',
         'start-with#hp1', 'start-with?qp1',
@@ -62,7 +62,7 @@ describe('Uri Rules', () => {
       ]
     },
     {
-      path: 'end-with$',
+      rule: 'end-with$',
       allow: ['end-with'],
       deny: [
         'not-end-with',
@@ -76,18 +76,17 @@ describe('Uri Rules', () => {
 
   let fixtureIndex = 1
   for(const test of fixtures) {
-    const {path, allow, deny} = test
-    console.log({[keyPath]: path});
-    const uriRules = UriRules({[keyPath]: path})
+    const {rule, allow, deny} = test
+    const uriRules = UriRules({[keyPath]: rule})
 
-    for(const rule of allow) {
-      it(`Test ${fixtureIndex} Allow Uri Rules: ` + rule, () => {
-        assert.deepEqual([keyPath], uriRules.allow(rule, [keyPath]))
+    for(const path of allow) {
+      it(`Test ${fixtureIndex} Uri rule '${rule}' allows '${path}'`, () => {
+        assert.deepEqual([keyPath], uriRules.allow(path, [keyPath]))
       })
     }
-    for(const rule of deny) {
-      it(`Test ${fixtureIndex} Deny Uri Rules: ` + rule, () => {
-        assert.deepEqual([keyPath], uriRules.deny(rule, [keyPath]))
+    for(const path of deny) {
+      it(`Test ${fixtureIndex} Uri rule '${rule}' denies '${path}'`, () => {
+        assert.deepEqual([keyPath], uriRules.deny(path, [keyPath]))
       })
     }
     fixtureIndex++

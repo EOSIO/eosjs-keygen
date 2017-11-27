@@ -6,13 +6,13 @@
   "browser": "lib/browser.js",
   "node": "",
   "scripts": {
-    "test": "mocha src/*.test.js",
+    "test": "mocha --use_strict src/*.test.js",
     "coverage": "istanbul cover _mocha -- -R spec src/*.test.js",
     "coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/.bin/coveralls",
     "prepublish": "npm run build_lib && npm run docs",
     "build": "npm run docs && npm run build_lib && npm run build_browser",
     "docs": "jsdoc2md src/session.js src/index.js src/jsdoc-types.js > API.md",
-    "build_lib": "node_modules/babel-cli/bin/babel.js src --out-dir lib",
+    "build_lib": "babel src --out-dir lib",
     "build_browser": "mkdir -p dist && browserify -o dist/eosjs-keygen.js -s KeyGen src/index.js"
   },
   "repository": {
@@ -35,6 +35,7 @@
     "babel-preset-es2015": "^6.24.1",
     "browserify": "^14.4.0",
     "coveralls": "^2.13.1",
+    "eosjs": "^4.0.2",
     "istanbul": "^0.4.5",
     "jsdoc-to-markdown": "^3.0.2",
     "mocha": "^3.4.2"

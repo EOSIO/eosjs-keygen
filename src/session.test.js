@@ -37,8 +37,8 @@ describe('Session', () => {
 
   it('login', () => {
     const pw = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
-    session = Session('uid')
-    session.login(pw, accountPermissions, 'active/**')
+    const session = Session('uid')
+    session.login(pw, 'active/**', accountPermissions)
   })
 
   // it('getEosKeys', () => {

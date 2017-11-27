@@ -98,10 +98,12 @@ Provides private key management and storage.
 **Example**  
 ```js
 
-Session = require('eosjs-keygen')
+Session = require('eosjs-keygen') // Session = require('./src')
+Eos = require('eosjs')
 
-Session.generateMasterKeys.then(keys => {
+Session.generateMasterKeys().then(keys => {
   // create blockchain account called 'myaccount'
+  console.log(keys)
 })
 
 // Todo, move to session-factory.js
@@ -117,7 +119,9 @@ sessionConfig = {
 // Todo, move to session-factory.js
 session = Session('myaccount', sessionConfig)
 
-eosjs.getAccount('myaccount').then(account => {
+eos = Eos.Testnet({keyProvider: session.keyProvider})
+
+eos.getAccount('myaccount').then(account => {
   // Todo, move to session-factory.js
   session.login('myaccount', account.permissions)
 })
@@ -128,10 +132,11 @@ eosjs.getAccount('myaccount').then(account => {
         * [.wipeAll](#Session.wipeAll)
         * [.generateMasterKeys(cpuEntropyBits)](#Session.generateMasterKeys) ⇒ <code>Promise</code>
     * _inner_
-        * [~login(parentPrivateKey, accountPermissions, [saveLoginsByPath])](#Session..login)
+        * [~login(parentPrivateKey, [saveLoginsByPath], accountPermissions)](#Session..login)
         * [~logout()](#Session..logout)
         * [~timeUntilExpire()](#Session..timeUntilExpire) ⇒ <code>number</code>
         * [~keepAlive()](#Session..keepAlive)
+        * [~keyProvider()](#Session..keyProvider)
 
 <a name="Session.wipeAll"></a>
 
@@ -165,7 +170,7 @@ New accounts will call this to generate a new keyset..
 ```
 <a name="Session..login"></a>
 
-### Session~login(parentPrivateKey, accountPermissions, [saveLoginsByPath])
+### Session~login(parentPrivateKey, [saveLoginsByPath], accountPermissions)
 Creates private keys and saves them in the keystore for use on demand.  This
     may be called to add additional keys which were removed as a result of Uri
     navigation or from calling logout.
@@ -183,8 +188,8 @@ Creates private keys and saves them in the keystore for use on demand.  This
 | Param | Type | Description |
 | --- | --- | --- |
 | parentPrivateKey | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password (masterPrivateKey),     active, owner, or other permission key. |
-| accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | Permissions object from Eos     blockchain via get_account.  This is used to validate the parentPrivateKey     and derive additional permission keys.  This allows this session     to detect incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
 | [saveLoginsByPath] | [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These permissions will be     saved to disk. (example: [`active/**`, ..]). A timeout will not     expire, logout to remove.     An exception is thrown if an owner or active key save is attempted. |
+| accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | Permissions object from Eos     blockchain via get_account.  This is used to validate the parentPrivateKey     and derive additional permission keys.  This allows this session     to detect incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
 
 <a name="Session..logout"></a>
 
@@ -206,6 +211,11 @@ Keep alive (prevent expiration).  Called automatically if Uri navigation
     to call this manually.
 
 **Kind**: inner method of [<code>Session</code>](#Session)  
+<a name="Session..keyProvider"></a>
+
+### Session~keyProvider()
+**Kind**: inner method of [<code>Session</code>](#Session)  
+**See**: https://github.com/eosio/eosjs  
 <a name="pubkey"></a>
 
 ## pubkey : <code>string</code>

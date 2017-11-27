@@ -23,10 +23,12 @@ module.exports = Session
 @example
 ```js
 
-Session = require('eosjs-keygen')
+Session = require('eosjs-keygen') // Session = require('./src')
+Eos = require('eosjs')
 
-Session.generateMasterKeys.then(keys => {
+Session.generateMasterKeys().then(keys => {
   // create blockchain account called 'myaccount'
+  console.log(keys)
 })
 
 // Todo, move to session-factory.js
@@ -42,7 +44,9 @@ sessionConfig = {
 // Todo, move to session-factory.js
 session = Session('myaccount', sessionConfig)
 
-eosjs.getAccount('myaccount').then(account => {
+eos = Eos.Testnet({keyProvider: session.keyProvider})
+
+eos.getAccount('myaccount').then(account => {
   // Todo, move to session-factory.js
   session.login('myaccount', account.permissions)
 })
@@ -77,24 +81,24 @@ function Session(accountName, config = {}) {
     @arg {parentPrivateKey} parentPrivateKey - Master password (masterPrivateKey),
     active, owner, or other permission key.
 
-    @arg {accountPermissions} accountPermissions - Permissions object from Eos
-    blockchain via get_account.  This is used to validate the parentPrivateKey
-    and derive additional permission keys.  This allows this session
-    to detect incorrect passwords early before trying to sign a transaction.
-    See Chain API `get_account => account.permissions`.
-   
     @arg {Array<keyPathMatcher>} [saveLoginsByPath] - These permissions will be
     saved to disk. (example: [`active/**`, ..]). A timeout will not
     expire, logout to remove.
 
     An exception is thrown if an owner or active key save is attempted.
 
+    @arg {accountPermissions} accountPermissions - Permissions object from Eos
+    blockchain via get_account.  This is used to validate the parentPrivateKey
+    and derive additional permission keys.  This allows this session
+    to detect incorrect passwords early before trying to sign a transaction.
+    See Chain API `get_account => account.permissions`.
+    
     @throws {Error} 'invalid login'
   */
-  function login(
+  function login( // deriveKeys (todo rename)
     parentPrivateKey,
-    accountPermissions,
-    saveLoginsByPath = []
+    saveLoginsByPath = [],
+    accountPermissions
   ) {
     const keyType = validate.keyType(parentPrivateKey)
     if(keyType === 'master') {
@@ -130,7 +134,7 @@ function Session(accountName, config = {}) {
 
       // Prevent certain private keys from being available to high-risk pages.
       const paths = keyStore.getKeyPaths().wif
-      const pathsToPurge = uriRules.check(paths, currentUriPath())
+      const pathsToPurge = uriRules.check(paths, currentUriPath()).deny
       keyStore.remove(pathsToPurge/*, keepPublicKeys*/)
     })
 
@@ -185,9 +189,17 @@ function Session(accountName, config = {}) {
     keyStore.wipeSession()
   }
 
+  /** @see https://github.com/eosio/eosjs */
+  function keyProvider(/*{transaction}*/) {
+    return keyStore.getKeyPaths().wif.map(path =>
+      keyStore.getPrivateKey(path)
+    )
+  }
+
   return {
     login, logout,
-    timeUntilExpire, keepAlive
+    timeUntilExpire, keepAlive,
+    keyProvider
   }
 }
 

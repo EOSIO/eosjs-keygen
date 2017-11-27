@@ -92,7 +92,7 @@ function checkUrl(uri, paths, rules) {
     @return {Array<uriMatchers>} from rules[path] or <b>null</b>
   */
   function fullUrlPathSet(path) {
-    uriPaths = []
+    const uriPaths = []
     for(const rulePath in rules) {
       let match
       // active key is derived from owner (but this is implied)
@@ -138,7 +138,7 @@ function checkUrl(uri, paths, rules) {
       }
     } else {
       deny.push(path)
-      console.log('WARN, no keygen uriRule for: ' + uri)
+      console.log('WARN, missing uriRule for: ' + uri)
     }
   }
   assert.equal(paths.length, allow.length + deny.length, 'missing path(s)')
