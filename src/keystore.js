@@ -2,7 +2,7 @@ const assert = require('assert')
 const {localStorage} = require('./config')
 
 const ecc = require('eosjs-ecc')
-const userStorage = require('./storage-utils')('ustor')
+const userStorage = require('./storage-utils')('kstor')
 const validate = require('./validate')
 
 /**
@@ -20,10 +20,9 @@ function KeyStore(accountName) {
   const state = {}
 
   // Initialize state from localStorage
-  userStorage.query(localStorage, [accountName, 'kpath'], ([type, path], value) => {
-    const key = userStorage.createKey(accountName, 'kpath', type, path)
-    console.log('key', key)
-    state[key] = value
+  userStorage.query(localStorage, [accountName, 'kpath'], ([path, pubkey], wif) => {
+    const storageKey = userStorage.createKey(accountName, 'kpath', path, pubkey)
+    state[storageKey] = wif
   })
 
   /**
@@ -63,15 +62,13 @@ function KeyStore(accountName) {
       keyType === 'privateKey' ? key.toPublic().toString() :
       ecc.privateToPublic(wif)
   
-    const userKeyWif = userStorage.createKey(accountName, 'kpath', 'wif', path)
-    const userKeyPub = userStorage.createKey(accountName, 'kpath', 'pubkey', path)
+    assert(!!pubkey, 'pubkey')
 
-    userStorage.save(state, userKeyWif, wif)
-    userStorage.save(state, userKeyPub, pubkey)
+    const storageKey = userStorage.createKey(accountName, 'kpath', path, pubkey)
 
+    userStorage.save(state, storageKey, wif)
     if(disk) {
-      userStorage.save(localStorage, userKeyWif, wif)
-      userStorage.save(localStorage, userKeyPub, pubkey)
+      userStorage.save(localStorage, storageKey, wif)
     }
     return {wif, pubkey}
   }
@@ -83,46 +80,64 @@ function KeyStore(accountName) {
     @return {object} {pubkey: Array<pubkey>, wif: Array<wif>}
   */
   function getKeyPaths() {
-    const pubkey = new Set()
-    const wif = new Set()
+    const pubs = new Set()
+    const wifs = new Set()
 
-    function queryUserStore(store, accountName, pubkey, wif) {
-      userStorage.query(store, [accountName, 'kpath'], ([type, path], value) => {
-        if(type === 'pubkey' && value != null) {
-          pubkey.add(path)
-        } else if(type === 'wif' && value != null) {
-          wif.add(path)
-        } else if(value != null) {
-          console.log('WARN: unknown key type, ' + type)
+    function query(store) {
+      userStorage.query(store, [accountName, 'kpath'], ([path, pubkey], wif) => {
+        pubs.add(path)
+        if(wif != null) {
+          wifs.add(path)
         }
       })
     }
 
-    queryUserStore(state, accountName, pubkey, wif)
-    queryUserStore(localStorage, accountName, pubkey, wif)
+    query(state)
+    query(localStorage)
 
-    return {pubkey: Array.from(pubkey), wif: Array.from(wif)}
+    return {pubkey: Array.from(pubs), wif: Array.from(wifs)}
   }
 
   /**
     @arg {keyPath}
-    @return {pubkey} public key or null
+    @return {Array<pubkey>} public key, keys, or empty array
   */
-  function getPublicKey(path) {
-    validate.path(path)
-    const userKeyPub = userStorage.createKey(accountName, 'kpath', 'pubkey', path)
-    return state[userKeyPub] ? state[userKeyPub] : localStorage[userKeyPub]
+  function getPublicKeys(path) {
+    return getKeys(path).pubkey
   }
 
   /**
-    Return or derive a private key.
+    Return private key for a path.
     @arg {keyPath}
     @return {wif} null
   */
-  function getPrivateKey(path) {
+  function getPrivateKeys(path) {
+    return getKeys(path).wif
+  }
+
+  /**
+    @arg {keyPath}
+    @return {object} {pubkey: Array<pubkey>, wif: Array<wif>} or empty arrays
+  */
+  function getKeys(path) {
     validate.path(path)
-    const userKeyWif = userStorage.createKey(accountName, 'kpath', 'wif', path)
-    return state[userKeyWif] ? state[userKeyWif] : localStorage[userKeyWif]
+
+    const pubs = new Set()
+    const wifs = new Set()
+
+    function query(store) {
+      userStorage.query(store, [accountName, 'kpath'], ([path, pubkey], wif) => {
+        pubs.add(pubkey)
+        if(wif != null) {
+          wifs.add(wif)
+        }
+      })
+    }
+
+    query(state)
+    query(localStorage)
+
+    return {pubkey: Array.from(pubs), wif: Array.from(wifs)}
   }
 
   /**
@@ -147,17 +162,23 @@ function KeyStore(accountName) {
     for(const path of paths) {
       validate.path(path)
     }
+    
+    function clean(store, prefix) {
+      for(const key in store) {
+        if(key.indexOf(prefix) === 0) {
+          if(keepPublicKeys) {
+            store[key] = null
+          } else {
+            delete store[key]
+          }
+        }
+      }
+    }
 
     for(const path of paths) {
-      const userKeyWif = userStorage.createKey(accountName, 'kpath', 'wif', path)
-      state[userKeyWif] = null
-      localStorage[userKeyWif] = null
-
-      if(!keepPublicKeys) {
-        const userKeyPub = userStorage.createKey(accountName, 'kpath', 'pubkey', path)
-        state[userKeyPub] = null
-        localStorage[userKeyPub] = null
-      }
+      const prefix = userStorage.createKey(accountName, 'kpath', path)
+      clean(state, prefix)
+      clean(localStorage, prefix)
     }
   }
 
@@ -178,8 +199,8 @@ function KeyStore(accountName) {
   return {
     save,
     getKeyPaths,
-    getPublicKey,
-    getPrivateKey,
+    getPublicKeys,
+    getPrivateKeys,
     remove,
     wipeUser
   }

@@ -55,8 +55,8 @@ describe('Store', () => {
       pubkey: ['owner'],
       wif: ['owner']
     })
-    assert.equal(keystore.getPublicKey('owner'), pubkey)
-    assert.equal(keystore.getPrivateKey('owner'), wif)
+    assert.deepEqual(keystore.getPublicKeys('owner'), [pubkey])
+    assert.deepEqual(keystore.getPrivateKeys('owner'), [wif])
 
     // keep the owner key above, add public key active/mypermission
     assert.deepEqual(keystore.save('active/mypermission', pubkey), {
