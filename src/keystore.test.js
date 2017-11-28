@@ -58,7 +58,7 @@ describe('Keystore', () => {
     assert.throws(() => {save('owner')}, /not be stored on disk/)
     assert.throws(() => {save('owner/cold')}, /not be stored on disk/)
 
-    assert.throws(() => {save('active')}, /not be stored on disk/)
+    assert.doesNotThrow(() => {save('active')})
     assert.doesNotThrow(() => {save('active/mypermission')})
   })
 

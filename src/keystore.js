@@ -164,7 +164,7 @@ function Keystore(accountName, config = {}) {
       assert(path.indexOf('owner/') !== 0,
         'owner derived keys should not be stored on disk')
 
-      assert(path !== 'active', 'active key should not be stored on disk')
+      // assert(path !== 'active', 'active key should not be stored on disk')
     }
 
     const wif =
