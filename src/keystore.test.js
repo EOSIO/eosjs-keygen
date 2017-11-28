@@ -1,145 +1,51 @@
 /* eslint-env mocha */
 const assert = require('assert')
-const {PrivateKey} = require('eosjs-ecc')
+const Keystore = require('./keystore.js')
+const {accountPermissions, checkKeySet} = require('./test-utils.js')
 
-const KeyStore = require('./keystore')
+const config = require('./config')
 
-describe('Store', () => {
+let pathname = '/'
+let historyListener
 
-  beforeEach(() => {
-    KeyStore.wipeAll()
-  })
+config.history = {
+  get location() {
+    return { pathname, search: '', hash: '' }
+  },
+  get listen() {
+    return callback => {
+      historyListener = callback
+    }
+  }
+}
 
+describe('Keystore', () => {
   afterEach(() => {
-    KeyStore.wipeAll()
+    Keystore.wipeAll()
   })
 
-  it('save disk security', () => {
-    const keystore = KeyStore('myaccount')
-
-    const disk = true
-    const privateKey = PrivateKey.randomKey(0)
-    const save = path => keystore.save(path, privateKey, disk)
-
-    assert.throws(() => {save('owner')}, /not be stored on disk/)
-    assert.throws(() => {save('owner/cold')}, /not be stored on disk/)
-
-    assert.throws(() => {save('active')}, /not be stored on disk/)
-    assert.doesNotThrow(() => {save('active/mypermission')})
-  })
-
-  it('save key', () => {
-    const keystore = KeyStore('myaccount')
-    const save = key => keystore.save('owner', key)
-
-    const privateKey = PrivateKey.randomKey(0)
-    const wif = privateKey.toWif()
-    const publicKey = privateKey.toPublic()
-    const pubkey = publicKey.toString()
-
-    assert.deepEqual(save(privateKey), {wif, pubkey})
-    assert.deepEqual(save(wif), {wif, pubkey})
-    assert.deepEqual(save(publicKey), {wif: null, pubkey})
-    assert.deepEqual(save(pubkey), {wif: null, pubkey})
-  })
-
-  it('save and get keys', () => {
-    const keystore = KeyStore('myaccount')
-
-    const privateKey = PrivateKey.randomKey(0)
-    const wif = privateKey.toWif()
-    const pubkey = privateKey.toPublic().toString()
-
-    assert.deepEqual(keystore.save('owner', wif), {wif, pubkey})
-    assert.deepEqual(keystore.getKeyPaths(), {
-      pubkey: ['owner'],
-      wif: ['owner']
-    })
-    assert.deepEqual(keystore.getPublicKeys('owner'), [pubkey])
-    assert.deepEqual(keystore.getPrivateKeys('owner'), [wif])
-
-    // keep the owner key above, add public key active/mypermission
-    assert.deepEqual(keystore.save('active/mypermission', pubkey), {
-      wif: null,
-      pubkey
-    })
-    assert.deepEqual(keystore.getKeyPaths(), {
-      pubkey: ['owner', 'active/mypermission'],
-      wif: ['owner']
-    })
-
-    // add the private key for active/mypermission
-    assert.deepEqual(keystore.save('active/mypermission', wif), {
-      pubkey,
-      wif
-    })
-
-    // now we have everything: owner, active/mypermission
-    assert.deepEqual(keystore.getKeyPaths(), {
-      pubkey: ['owner', 'active/mypermission'],
-      wif: ['owner', 'active/mypermission']
+  it('generateMasterKeys', (done) => {
+    Keystore.generateMasterKeys(0).then(keys => {
+      checkKeySet(keys)
+      done()
     })
   })
 
-  it('remove', () => {
-    const keystore = KeyStore('myaccount')
-
-    const privateKey = PrivateKey.randomKey(0)
-    const wif = privateKey.toWif()
-    const pubkey = privateKey.toPublic().toString()
-
-    assert.deepEqual(keystore.save('owner', wif), {wif, pubkey})
-
-    keystore.remove('owner', true/*keepPublicKeys*/)
-    assert.deepEqual(keystore.getKeyPaths(), {
-      pubkey: ['owner'],
-      wif: []
-    })
-
-    keystore.remove(new Set(['owner']), false/*keepPublicKeys*/)
-    assert.deepEqual(keystore.getKeyPaths(), {
-      pubkey: [],
-      wif: []
-    })
+  it('constructor', () => {
+    Keystore('uid')
   })
 
-  it('Initialize from disk', () => {
-    const keystore = KeyStore('myaccount')
-
-    const privateKey = PrivateKey.randomKey(0)
-    const wif = privateKey.toWif()
-    const pubkey = privateKey.toPublic().toString()
-
-    keystore.save('active/mypermission', wif, true/*disk*/)
-
-    const keystore2 = KeyStore('myaccount')
-    assert.deepEqual(keystore2.getKeyPaths(), {
-      pubkey: ['active/mypermission'],
-      wif: ['active/mypermission']
-    })
+  it('login', () => {
+    const pw = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
+    const keystore = Keystore('uid')
+    keystore.deriveKeys(pw, 'active/**', accountPermissions)
   })
 
-  it('wipe user', () => {
-    const keystore = KeyStore('myaccount')
-
-    const privateKey = PrivateKey.randomKey(0)
-    const wif = privateKey.toWif()
-    const pubkey = privateKey.toPublic().toString()
-
-    keystore.save('active/mypermission', wif, true/*disk*/)
-
-    keystore.wipeUser()
-
-    assert.deepEqual(keystore.getKeyPaths(), {
-      pubkey: [],
-      wif: []
-    })
-
-    const keystore2 = KeyStore('myaccount')
-    assert.deepEqual(keystore2.getKeyPaths(), {
-      pubkey: [],
-      wif: []
-    })
-  })
+  // it('getEosKeys', () => {
+  //   const testPrivate = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
+  //   const keys = gen.getEosKeys(testPrivate)
+  //   checkKeySet(keys)
+  // })
 
 })
+

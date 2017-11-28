@@ -1,3 +1,3 @@
-const Session = require('./session')
+const Keystore = require('./keystore')
 
-module.exports = Session
+module.exports = Keystore

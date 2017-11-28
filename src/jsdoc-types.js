@@ -174,7 +174,7 @@
   @typedef {Object<uriRule>} uriRules
 
   Define rules that says which private keys may exist within given locations
-  of the application.  If a rule is not found or does not match, the session
+  of the application.  If a rule is not found or does not match, the keystore
   will remove the key.  The UI can prompt the user to obtain the needed key
   again.
 

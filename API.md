@@ -1,7 +1,7 @@
 ## Functions
 
 <dl>
-<dt><a href="#Session">Session(accountName, [config])</a></dt>
+<dt><a href="#Keystore">Keystore(accountName, [config])</a></dt>
 <dd><p>Provides private key management and storage.</p>
 </dd>
 </dl>
@@ -70,7 +70,7 @@ non-canonical path match.  Uri paths should be canonical though.</li>
 <dd></dd>
 <dt><a href="#uriRules">uriRules</a> : <code><a href="#uriRule">Object.&lt;uriRule&gt;</a></code></dt>
 <dd><p>Define rules that says which private keys may exist within given locations
-  of the application.  If a rule is not found or does not match, the session
+  of the application.  If a rule is not found or does not match, the keystore
   will remove the key.  The UI can prompt the user to obtain the needed key
   again.</p>
 <p>  For any non-trivial configuration, implementions should create a unit test
@@ -81,9 +81,9 @@ non-canonical path match.  Uri paths should be canonical though.</li>
 </dd>
 </dl>
 
-<a name="Session"></a>
+<a name="Keystore"></a>
 
-## Session(accountName, [config])
+## Keystore(accountName, [config])
 Provides private key management and storage.
 
 **Kind**: global function  
@@ -98,15 +98,15 @@ Provides private key management and storage.
 **Example**  
 ```js
 
-Session = require('eosjs-keygen') // Session = require('./src')
+Keystore = require('eosjs-keygen') // Keystore = require('./src')
 Eos = require('eosjs')
 
-Session.generateMasterKeys().then(keys => {
+Keystore.generateMasterKeys().then(keys => {
   // create blockchain account called 'myaccount'
   console.log(keys)
 })
 
-// Todo, move to session-factory.js
+// Todo, move to keystore-factory.js
 sessionConfig = {
   timeoutInMin: 30,
   uriRules: {
@@ -116,45 +116,45 @@ sessionConfig = {
   }
 }
 
-// Todo, move to session-factory.js
-session = Session('myaccount', sessionConfig)
+// Todo, move to keystore-factory.js
+keystore = Keystore('myaccount', sessionConfig)
 
-eos = Eos.Testnet({keyProvider: session.keyProvider})
+eos = Eos.Testnet({keyProvider: keystore.keyProvider})
 
 eos.getAccount('myaccount').then(account => {
-  // Todo, move to session-factory.js
-  session.login('myaccount', account.permissions)
+  // Todo, move to keystore-factory.js
+  keystore.deriveKeys('myaccount', account.permissions)
 })
 ```
 
-* [Session(accountName, [config])](#Session)
+* [Keystore(accountName, [config])](#Keystore)
     * _static_
-        * [.wipeAll](#Session.wipeAll)
-        * [.generateMasterKeys(cpuEntropyBits)](#Session.generateMasterKeys) ⇒ <code>Promise</code>
+        * [.wipeAll](#Keystore.wipeAll)
+        * [.generateMasterKeys(cpuEntropyBits)](#Keystore.generateMasterKeys) ⇒ <code>Promise</code>
     * _inner_
-        * [~login(parentPrivateKey, [saveLoginsByPath], accountPermissions)](#Session..login)
-        * [~logout()](#Session..logout)
-        * [~timeUntilExpire()](#Session..timeUntilExpire) ⇒ <code>number</code>
-        * [~keepAlive()](#Session..keepAlive)
-        * [~keyProvider()](#Session..keyProvider)
+        * [~deriveKeys(parentPrivateKey, [saveLoginsByPath], accountPermissions)](#Keystore..deriveKeys)
+        * [~logout()](#Keystore..logout)
+        * [~timeUntilExpire()](#Keystore..timeUntilExpire) ⇒ <code>number</code>
+        * [~keepAlive()](#Keystore..keepAlive)
+        * [~keyProvider()](#Keystore..keyProvider)
 
-<a name="Session.wipeAll"></a>
+<a name="Keystore.wipeAll"></a>
 
-### Session.wipeAll
-Erase all traces of this session (for all users).
+### Keystore.wipeAll
+Erase all traces of this keystore (for all users).
 
-**Kind**: static property of [<code>Session</code>](#Session)  
-<a name="Session.generateMasterKeys"></a>
+**Kind**: static property of [<code>Keystore</code>](#Keystore)  
+<a name="Keystore.generateMasterKeys"></a>
 
-### Session.generateMasterKeys(cpuEntropyBits) ⇒ <code>Promise</code>
-New accounts will call this to generate a new keyset..
+### Keystore.generateMasterKeys(cpuEntropyBits) ⇒ <code>Promise</code>
+New accounts will call this to create a new keyset..
 
   A password manager or backup should save (at the very minimum) the returned
   {masterPrivateKey} for later login.  The owner and active can be re-created
   from the masterPrivateKey.  It is still a good idea to save all information
   in the backup for easy reference.
 
-**Kind**: static method of [<code>Session</code>](#Session)  
+**Kind**: static method of [<code>Keystore</code>](#Keystore)  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -168,18 +168,18 @@ New accounts will call this to generate a new keyset..
   publicKeys: {owner, active} // <= derived from masterPrivateKey
 }
 ```
-<a name="Session..login"></a>
+<a name="Keystore..deriveKeys"></a>
 
-### Session~login(parentPrivateKey, [saveLoginsByPath], accountPermissions)
-Creates private keys and saves them in the keystore for use on demand.  This
+### Keystore~deriveKeys(parentPrivateKey, [saveLoginsByPath], accountPermissions)
+Creates private keys and saves them in the keypathStore for use on demand.  This
     may be called to add additional keys which were removed as a result of Uri
     navigation or from calling logout.
 
     It is possible for the same user to login more than once using a different
     parentPrivateKey (master password or private key).  The purpose is to add
-    additional keys to the session.
+    additional keys to the keystore.
 
-**Kind**: inner method of [<code>Session</code>](#Session)  
+**Kind**: inner method of [<code>Keystore</code>](#Keystore)  
 **Throws**:
 
 - <code>Error</code> 'invalid login'
@@ -189,32 +189,32 @@ Creates private keys and saves them in the keystore for use on demand.  This
 | --- | --- | --- |
 | parentPrivateKey | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password (masterPrivateKey),     active, owner, or other permission key. |
 | [saveLoginsByPath] | [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These permissions will be     saved to disk. (example: [`active/**`, ..]). A timeout will not     expire, logout to remove.     An exception is thrown if an owner or active key save is attempted. |
-| accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | Permissions object from Eos     blockchain via get_account.  This is used to validate the parentPrivateKey     and derive additional permission keys.  This allows this session     to detect incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
+| accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | Permissions object from Eos     blockchain via get_account.  This is used to validate the parentPrivateKey     and derive additional permission keys.  This allows this keystore     to detect incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
 
-<a name="Session..logout"></a>
+<a name="Keystore..logout"></a>
 
-### Session~logout()
+### Keystore~logout()
 Removes any saved keys on disk and clears keys in memory.  Call only when
     the user chooses "logout."  Do not call when the application exits.
 
-**Kind**: inner method of [<code>Session</code>](#Session)  
-<a name="Session..timeUntilExpire"></a>
+**Kind**: inner method of [<code>Keystore</code>](#Keystore)  
+<a name="Keystore..timeUntilExpire"></a>
 
-### Session~timeUntilExpire() ⇒ <code>number</code>
-**Kind**: inner method of [<code>Session</code>](#Session)  
+### Keystore~timeUntilExpire() ⇒ <code>number</code>
+**Kind**: inner method of [<code>Keystore</code>](#Keystore)  
 **Returns**: <code>number</code> - 0 (expired), null, or milliseconds until expire  
-<a name="Session..keepAlive"></a>
+<a name="Keystore..keepAlive"></a>
 
-### Session~keepAlive()
+### Keystore~keepAlive()
 Keep alive (prevent expiration).  Called automatically if Uri navigation
-    happens or keys are obtained from the keystore.  It may be necessary
+    happens or keys are obtained from the keypathStore.  It may be necessary
     to call this manually.
 
-**Kind**: inner method of [<code>Session</code>](#Session)  
-<a name="Session..keyProvider"></a>
+**Kind**: inner method of [<code>Keystore</code>](#Keystore)  
+<a name="Keystore..keyProvider"></a>
 
-### Session~keyProvider()
-**Kind**: inner method of [<code>Session</code>](#Session)  
+### Keystore~keyProvider()
+**Kind**: inner method of [<code>Keystore</code>](#Keystore)  
 **See**: https://github.com/eosio/eosjs  
 <a name="pubkey"></a>
 
@@ -411,7 +411,7 @@ function createPathMatcher(path) {
 
 ## uriRules : [<code>Object.&lt;uriRule&gt;</code>](#uriRule)
 Define rules that says which private keys may exist within given locations
-  of the application.  If a rule is not found or does not match, the session
+  of the application.  If a rule is not found or does not match, the keystore
   will remove the key.  The UI can prompt the user to obtain the needed key
   again.
 

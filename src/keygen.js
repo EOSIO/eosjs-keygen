@@ -66,7 +66,7 @@ function authsByPath(accountPermissions) {
   @arg {parentPrivateKey} parentPrivateKey - Master password, active, owner, or
     other key in the account's permission.
 
-  @arg {object<keyPathAuth>} pathsByAuth - see generate.authsByPath(..)
+  @arg {object<keyPathAuth>} pathsByAuth - see keygen.authsByPath(..)
 
   @return {Array<keyPathPrivateKey>} - Selected keys or empty array
 */

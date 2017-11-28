@@ -10,7 +10,7 @@ Status: **Active Development, breaking changes..**
 ### Usage
 
 ```javascript
-KeyGen = require('eosjs-keygen')
+Keystore = require('eosjs-keygen')
 ```
 
 See [API](./API.md)

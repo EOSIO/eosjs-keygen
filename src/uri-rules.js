@@ -25,10 +25,10 @@ function UriRules(rules) {
 
     @arg {Set<keyPath>|Array<keyPath>} paths - key paths: owner, active,
     active/mypermission, etc..  These paths are created from blockchain
-    account.permissions and gathered in the session.login function.
+    account.permissions and gathered in the keystore.login function.
   
     @return {{allow: Array<keyPath>, deny: Array<keyPath>}} - paths allowed or
-    denied under current Uri.  This tells the keystore, according to the
+    denied under current Uri.  This tells the keypathStore, according to the
     Uri rules to generate, save, or remove private keys only for these paths.
   */
   function check(uri, paths) {
