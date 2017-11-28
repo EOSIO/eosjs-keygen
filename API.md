@@ -207,7 +207,7 @@ Removes any saved keys on disk and clears keys in memory.  Call only when
 
 ### Session~keepAlive()
 Keep alive (prevent expiration).  Called automatically if Uri navigation
-    happens or keys are obtained from the keyStore.  It may be necessary
+    happens or keys are obtained from the keystore.  It may be necessary
     to call this manually.
 
 **Kind**: inner method of [<code>Session</code>](#Session)  

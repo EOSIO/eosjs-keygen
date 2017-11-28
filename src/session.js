@@ -64,7 +64,7 @@ function Session(accountName, config = {}) {
   config = Object.assign({}, configDefaults, config)
 
   const uriRules = UriRules(config.uriRules)
-  const keyStore = KeyStore(accountName)
+  const keystore = KeyStore(accountName)
 
   let expireAt, expireInterval
   let unlistenHistory
@@ -91,8 +91,9 @@ function Session(accountName, config = {}) {
     blockchain via get_account.  This is used to validate the parentPrivateKey
     and derive additional permission keys.  This allows this session
     to detect incorrect passwords early before trying to sign a transaction.
+
     See Chain API `get_account => account.permissions`.
-    
+
     @throws {Error} 'invalid login'
   */
   function login( // deriveKeys (todo rename)
@@ -106,6 +107,7 @@ function Session(accountName, config = {}) {
     } else {
       parentPrivateKey = PrivateKey(parentPrivateKey)
     }
+
     assert(parentPrivateKey != null,
       'parentPrivateKey is a master password or private key')
 
@@ -114,7 +116,7 @@ function Session(accountName, config = {}) {
     const pathsForAccount = Object.keys(authsByPath)
     const pathsForUrl = uriRules.check(currentUriPath(), pathsForAccount)
 
-    // keyStore.remove(pathsForUrl.deny/*, keepPublicKeys*/)
+    // keystore.remove(pathsForUrl.deny/*, keepPublicKeys*/)
 
     // const loginPrivate = generate.keysByPath(pathsForUrl.allow, authsByPath)
     // const keys = generate.keysByPath(
@@ -126,16 +128,16 @@ function Session(accountName, config = {}) {
     // )
 
     // keys.forEach(([path, wif, pubkey]) => {
-    //   keyStore.save(path, wif)
+    //   keystore.save(path, wif)
     // })
 
     unlistenHistory = history.listen(() => {
       keepAlive()
 
       // Prevent certain private keys from being available to high-risk pages.
-      const paths = keyStore.getKeyPaths().wif
+      const paths = keystore.getKeyPaths().wif
       const pathsToPurge = uriRules.check(paths, currentUriPath()).deny
-      keyStore.remove(pathsToPurge/*, keepPublicKeys*/)
+      keystore.remove(pathsToPurge/*, keepPublicKeys*/)
     })
 
     if(config.timeoutInMin != null) {
@@ -157,7 +159,7 @@ function Session(accountName, config = {}) {
     the user chooses "logout."  Do not call when the application exits.
   */
   function logout() {
-    keyStore.wipeUser()
+    keystore.wipeUser()
     if(unlistenHistory) {
       unlistenHistory()
     }
@@ -176,7 +178,7 @@ function Session(accountName, config = {}) {
 
   /**
     Keep alive (prevent expiration).  Called automatically if Uri navigation
-    happens or keys are obtained from the keyStore.  It may be necessary
+    happens or keys are obtained from the keystore.  It may be necessary
     to call this manually.
   */
   function keepAlive() {
@@ -186,13 +188,13 @@ function Session(accountName, config = {}) {
   /** @private */
   function expire() {
     expireAt = 0
-    keyStore.wipeSession()
+    keystore.wipeSession()
   }
 
   /** @see https://github.com/eosio/eosjs */
   function keyProvider(/*{transaction}*/) {
-    return keyStore.getKeyPaths().wif.map(path =>
-      keyStore.getPrivateKey(path)
+    return keystore.getKeyPaths().wif.map(path =>
+      keystore.getPrivateKey(path)
     )
   }
 
