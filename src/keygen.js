@@ -1,12 +1,45 @@
+/** @module Keygen */
+
 const assert = require('assert')
 
 const {PrivateKey} = require('eosjs-ecc')
 const validate = require('./validate')
 
 module.exports = {
+  generateMasterKeys,
   authsByPath,
   keysByPath,
   genKeys,
+}
+
+/**
+  New accounts will call this to create a new keyset..
+
+  A password manager or backup should save (at the very minimum) the returned
+  {masterPrivateKey} for later login.  The owner and active can be re-created
+  from the masterPrivateKey.  It is still a good idea to save all information
+  in the backup for easy reference.
+
+  @arg {number} cpuEntropyBits - Use 0 for fast testing, 128 (default) takes a
+  second
+
+  @return {Promise}
+  @example
+{
+  masterPrivateKey, // <= place in a password input field (password manager)
+  privateKeys: {owner, active}, // <= derived from masterPrivateKey
+  publicKeys: {owner, active} // <= derived from masterPrivateKey
+}
+*/
+function generateMasterKeys(cpuEntropyBits) {
+  return new Promise(resolve => {
+    // By default getKeys creates random masterPrivateKey returns this and
+    // other derived keys
+    setTimeout(() => {
+      const keys = genKeys(null, cpuEntropyBits)
+      resolve(keys)
+    })
+  })
 }
 
 /** @typedef {Object<keyPath, auth>} keyPathAuth */
@@ -92,6 +125,8 @@ function keysByPath(parentPrivateKey, pathsByAuth) {
 //   key calculation is expensive).
 
 /**
+  Synchronous version of generateMasterKeys.
+
   @arg {masterPrivateKey} [masterPrivateKey = null] When null, a random key
   is created..
 

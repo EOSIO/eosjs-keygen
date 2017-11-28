@@ -3,11 +3,18 @@ const assert = require('assert')
 const {accountPermissions, checkKeySet} = require('./test-utils.js')
 
 const {PrivateKey} = require('eosjs-ecc')
-const keygen = require('./keygen')
+const Keygen = require('./keygen')
 
 describe('Generate', () => {
+  it('generateMasterKeys', (done) => {
+    Keygen.generateMasterKeys(0).then(keys => {
+      checkKeySet(keys)
+      done()
+    })
+  })
+
   it('authsByPath', () => {
-    const paths = keygen.authsByPath(accountPermissions)
+    const paths = Keygen.authsByPath(accountPermissions)
     assert.deepEqual(
       ['active', 'active/mypermission', 'owner'],
       Object.keys(paths)
@@ -16,18 +23,18 @@ describe('Generate', () => {
 
   it('keysByPath', () => {
     const master = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
-    const keyPathPrivateKey = keygen.keysByPath(master, accountPermissions)
+    const keyPathPrivateKey = Keygen.keysByPath(master, accountPermissions)
     // console.log('keyPathPrivateKey', keyPathPrivateKey)
   })
 
   it('genKeys (create)', () => {
-    const keys = keygen.genKeys(null, 0)
+    const keys = Keygen.genKeys(null, 0)
     checkKeySet(keys)
   })
 
   it('genKeys (re-construct)', () => {
     const master = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
-    const keys = keygen.genKeys(master, 0)
+    const keys = Keygen.genKeys(master, 0)
     checkKeySet(keys)
   })
 })

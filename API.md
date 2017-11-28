@@ -1,9 +1,10 @@
-## Functions
+## Modules
 
 <dl>
-<dt><a href="#Keystore">Keystore(accountName, [config])</a></dt>
-<dd><p>Provides private key management and storage.</p>
-</dd>
+<dt><a href="#module_Keystore">Keystore</a></dt>
+<dd></dd>
+<dt><a href="#module_Keygen">Keygen</a></dt>
+<dd></dd>
 </dl>
 
 ## Typedefs
@@ -81,12 +82,36 @@ non-canonical path match.  Uri paths should be canonical though.</li>
 </dd>
 </dl>
 
-<a name="Keystore"></a>
+<a name="module_Keystore"></a>
 
-## Keystore(accountName, [config])
+## Keystore
+
+* [Keystore](#module_Keystore)
+    * [~Keystore(accountName, [config])](#module_Keystore..Keystore)
+        * _static_
+            * [.wipeAll()](#module_Keystore..Keystore.wipeAll)
+        * _inner_
+            * [~deriveKeys(parentPrivateKey, [saveLoginsByPath], accountPermissions)](#module_Keystore..Keystore..deriveKeys)
+            * [~addKey(path, key, disk)](#module_Keystore..Keystore..addKey) ⇒ <code>Object</code>
+            * [~getKeyPaths()](#module_Keystore..Keystore..getKeyPaths) ⇒ <code>object</code>
+            * [~getPublicKeys(path)](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
+            * [~getPrivateKeys(path)](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
+            * [~getKeys(path)](#module_Keystore..Keystore..getKeys) ⇒ <code>object</code>
+            * [~removeKey(paths, keepPublicKeys)](#module_Keystore..Keystore..removeKey)
+            * [~logout()](#module_Keystore..Keystore..logout)
+            * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
+            * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
+            * [~keyProvider()](#module_Keystore..Keystore..keyProvider)
+
+<a name="module_Keystore..Keystore"></a>
+
+### Keystore~Keystore(accountName, [config])
 Provides private key management and storage.
 
-**Kind**: global function  
+  This keystore does not query the blockchain or any external services.
+  Removing keys here does not affect the blockchain.
+
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore)  
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -95,58 +120,161 @@ Provides private key management and storage.
 | [config.timeoutInMin] | <code>number</code> | <code>30</code> |  |
 | [config.uriRules] | [<code>uriRules</code>](#uriRules) |  | Specify which type of private key will   be available on certain pages of the application.  Lock it down as much as   possible and later re-prompt the user if a key is needed. |
 
-**Example**  
-```js
 
-Keystore = require('eosjs-keygen') // Keystore = require('./src')
-Eos = require('eosjs')
-
-Keystore.generateMasterKeys().then(keys => {
-  // create blockchain account called 'myaccount'
-  console.log(keys)
-})
-
-// Todo, move to keystore-factory.js
-sessionConfig = {
-  timeoutInMin: 30,
-  uriRules: {
-    'owner' : '/account_recovery',
-    'active': '/(transfer|contracts)',
-    'active/**': '/producers'
-  }
-}
-
-// Todo, move to keystore-factory.js
-keystore = Keystore('myaccount', sessionConfig)
-
-eos = Eos.Testnet({keyProvider: keystore.keyProvider})
-
-eos.getAccount('myaccount').then(account => {
-  // Todo, move to keystore-factory.js
-  keystore.deriveKeys('myaccount', account.permissions)
-})
-```
-
-* [Keystore(accountName, [config])](#Keystore)
+* [~Keystore(accountName, [config])](#module_Keystore..Keystore)
     * _static_
-        * [.wipeAll](#Keystore.wipeAll)
-        * [.generateMasterKeys(cpuEntropyBits)](#Keystore.generateMasterKeys) ⇒ <code>Promise</code>
+        * [.wipeAll()](#module_Keystore..Keystore.wipeAll)
     * _inner_
-        * [~deriveKeys(parentPrivateKey, [saveLoginsByPath], accountPermissions)](#Keystore..deriveKeys)
-        * [~logout()](#Keystore..logout)
-        * [~timeUntilExpire()](#Keystore..timeUntilExpire) ⇒ <code>number</code>
-        * [~keepAlive()](#Keystore..keepAlive)
-        * [~keyProvider()](#Keystore..keyProvider)
+        * [~deriveKeys(parentPrivateKey, [saveLoginsByPath], accountPermissions)](#module_Keystore..Keystore..deriveKeys)
+        * [~addKey(path, key, disk)](#module_Keystore..Keystore..addKey) ⇒ <code>Object</code>
+        * [~getKeyPaths()](#module_Keystore..Keystore..getKeyPaths) ⇒ <code>object</code>
+        * [~getPublicKeys(path)](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
+        * [~getPrivateKeys(path)](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
+        * [~getKeys(path)](#module_Keystore..Keystore..getKeys) ⇒ <code>object</code>
+        * [~removeKey(paths, keepPublicKeys)](#module_Keystore..Keystore..removeKey)
+        * [~logout()](#module_Keystore..Keystore..logout)
+        * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
+        * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
+        * [~keyProvider()](#module_Keystore..Keystore..keyProvider)
 
-<a name="Keystore.wipeAll"></a>
+<a name="module_Keystore..Keystore.wipeAll"></a>
 
-### Keystore.wipeAll
+#### Keystore.wipeAll()
 Erase all traces of this keystore (for all users).
 
-**Kind**: static property of [<code>Keystore</code>](#Keystore)  
-<a name="Keystore.generateMasterKeys"></a>
+**Kind**: static method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+<a name="module_Keystore..Keystore..deriveKeys"></a>
 
-### Keystore.generateMasterKeys(cpuEntropyBits) ⇒ <code>Promise</code>
+#### Keystore~deriveKeys(parentPrivateKey, [saveLoginsByPath], accountPermissions)
+Creates private keys and saves them for use on demand.  This
+    may be called to add additional keys which were removed as a result of Uri
+    navigation or from calling logout.
+
+    It is possible for the same user to login more than once using a different
+    parentPrivateKey (master password or private key).  The purpose is to add
+    additional keys to the keystore.
+
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**Throws**:
+
+- <code>Error</code> 'invalid login'
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| parentPrivateKey | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password (masterPrivateKey),     active, owner, or other permission key. |
+| [saveLoginsByPath] | [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These permissions will be     saved to disk. (example: [`active/**`, ..]). A timeout will not     expire, logout to remove.     An exception is thrown if an owner or active key save is attempted. |
+| accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | Permissions object from Eos     blockchain via get_account.  This is used to validate the parentPrivateKey     and derive additional permission keys.  This allows this keystore     to detect incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
+
+<a name="module_Keystore..Keystore..addKey"></a>
+
+#### Keystore~addKey(path, key, disk) ⇒ <code>Object</code>
+Save a private or public key to the store in either RAM only or RAM and
+    disk. Prevents certain key types from being saved on disk.
+
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**Throws**:
+
+- <code>AssertionError</code> path error or active, owner/* disk save attempted
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| path | [<code>keyPath</code>](#keyPath) |  | active/mypermission, owner, active, .. |
+| key | <code>string</code> |  | wif, pubkey, or privateKey |
+| disk | <code>boolean</code> | <code>false</code> | save to persistent storage (localStorage) |
+
+<a name="module_Keystore..Keystore..getKeyPaths"></a>
+
+#### Keystore~getKeyPaths() ⇒ <code>object</code>
+Return paths for all available keys.  An empty Set is used if there are
+    no keys.
+
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**Returns**: <code>object</code> - {pubkey: Array<pubkey>, wif: Array<wif>}  
+<a name="module_Keystore..Keystore..getPublicKeys"></a>
+
+#### Keystore~getPublicKeys(path) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**Returns**: [<code>Array.&lt;pubkey&gt;</code>](#pubkey) - public keys (probably one) or empty array  
+
+| Param | Type |
+| --- | --- |
+| path | [<code>keyPath</code>](#keyPath) | 
+
+<a name="module_Keystore..Keystore..getPrivateKeys"></a>
+
+#### Keystore~getPrivateKeys(path) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
+Return private key for a path.
+
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**Returns**: [<code>Array.&lt;wif&gt;</code>](#wif) - wifs (probably one) or empty array  
+
+| Param | Type |
+| --- | --- |
+| path | [<code>keyPath</code>](#keyPath) | 
+
+<a name="module_Keystore..Keystore..getKeys"></a>
+
+#### Keystore~getKeys(path) ⇒ <code>object</code>
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**Returns**: <code>object</code> - {pubkey: Array<pubkey>, wif: Array<wif>} or empty arrays  
+
+| Param | Type |
+| --- | --- |
+| path | [<code>keyPath</code>](#keyPath) | 
+
+<a name="module_Keystore..Keystore..removeKey"></a>
+
+#### Keystore~removeKey(paths, keepPublicKeys)
+Remove a key or keys from this key store (ram and disk).
+
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| paths | [<code>keyPath</code>](#keyPath) \| [<code>Array.&lt;keyPath&gt;</code>](#keyPath) \| [<code>Set.&lt;keyPath&gt;</code>](#keyPath) |  |  |
+| keepPublicKeys | <code>boolean</code> | <code>false</code> | Enable for better UX; show users keys they     have access too without requiring them to login. Logging in brings a     private key online which is not necessary to see public information.     The UX should implement this behavior in a way that is clear public keys     are cached before enabling this feature. |
+
+<a name="module_Keystore..Keystore..logout"></a>
+
+#### Keystore~logout()
+Removes any saved keys on disk and clears keys in memory.  Call only when
+    the user chooses "logout."  Do not call when the application exits.
+
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+<a name="module_Keystore..Keystore..timeUntilExpire"></a>
+
+#### Keystore~timeUntilExpire() ⇒ <code>number</code>
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**Returns**: <code>number</code> - 0 (expired), null, or milliseconds until expire  
+<a name="module_Keystore..Keystore..keepAlive"></a>
+
+#### Keystore~keepAlive()
+Keep alive (prevent expiration).  Called automatically if Uri navigation
+    happens or keys are required.  It may be necessary to call this manually.
+
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+<a name="module_Keystore..Keystore..keyProvider"></a>
+
+#### Keystore~keyProvider()
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**See**: https://github.com/eosio/eosjs  
+<a name="module_Keygen"></a>
+
+## Keygen
+
+* [Keygen](#module_Keygen)
+    * [~generateMasterKeys(cpuEntropyBits)](#module_Keygen..generateMasterKeys) ⇒ <code>Promise</code>
+    * [~authsByPath(accountPermissions)](#module_Keygen..authsByPath) ⇒ <code>object.&lt;keyPathAuth&gt;</code>
+    * [~keysByPath(parentPrivateKey, pathsByAuth)](#module_Keygen..keysByPath) ⇒ <code>Array.&lt;keyPathPrivateKey&gt;</code>
+    * [~genKeys([masterPrivateKey], [cpuEntropyBits])](#module_Keygen..genKeys)
+    * [~keyPathAuth](#module_Keygen..keyPathAuth) : <code>Object.&lt;keyPath, auth&gt;</code>
+    * [~keyPathPrivateKey](#module_Keygen..keyPathPrivateKey) : <code>Object.&lt;keyPath, privateKey&gt;</code>
+
+<a name="module_Keygen..generateMasterKeys"></a>
+
+### Keygen~generateMasterKeys(cpuEntropyBits) ⇒ <code>Promise</code>
 New accounts will call this to create a new keyset..
 
   A password manager or backup should save (at the very minimum) the returned
@@ -154,7 +282,7 @@ New accounts will call this to create a new keyset..
   from the masterPrivateKey.  It is still a good idea to save all information
   in the backup for easy reference.
 
-**Kind**: static method of [<code>Keystore</code>](#Keystore)  
+**Kind**: inner method of [<code>Keygen</code>](#module_Keygen)  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -168,54 +296,49 @@ New accounts will call this to create a new keyset..
   publicKeys: {owner, active} // <= derived from masterPrivateKey
 }
 ```
-<a name="Keystore..deriveKeys"></a>
+<a name="module_Keygen..authsByPath"></a>
 
-### Keystore~deriveKeys(parentPrivateKey, [saveLoginsByPath], accountPermissions)
-Creates private keys and saves them in the keypathStore for use on demand.  This
-    may be called to add additional keys which were removed as a result of Uri
-    navigation or from calling logout.
+### Keygen~authsByPath(accountPermissions) ⇒ <code>object.&lt;keyPathAuth&gt;</code>
+**Kind**: inner method of [<code>Keygen</code>](#module_Keygen)  
 
-    It is possible for the same user to login more than once using a different
-    parentPrivateKey (master password or private key).  The purpose is to add
-    additional keys to the keystore.
+| Param | Type |
+| --- | --- |
+| accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | 
 
-**Kind**: inner method of [<code>Keystore</code>](#Keystore)  
-**Throws**:
+<a name="module_Keygen..keysByPath"></a>
 
-- <code>Error</code> 'invalid login'
+### Keygen~keysByPath(parentPrivateKey, pathsByAuth) ⇒ <code>Array.&lt;keyPathPrivateKey&gt;</code>
+Derive key path and its corresponding privateKey for a given parent key
+  and a blockchain account.
 
+**Kind**: inner method of [<code>Keygen</code>](#module_Keygen)  
+**Returns**: <code>Array.&lt;keyPathPrivateKey&gt;</code> - - Selected keys or empty array  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| parentPrivateKey | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password (masterPrivateKey),     active, owner, or other permission key. |
-| [saveLoginsByPath] | [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These permissions will be     saved to disk. (example: [`active/**`, ..]). A timeout will not     expire, logout to remove.     An exception is thrown if an owner or active key save is attempted. |
-| accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | Permissions object from Eos     blockchain via get_account.  This is used to validate the parentPrivateKey     and derive additional permission keys.  This allows this keystore     to detect incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
+| parentPrivateKey | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password, active, owner, or     other key in the account's permission. |
+| pathsByAuth | <code>object.&lt;keyPathAuth&gt;</code> | see keygen.authsByPath(..) |
 
-<a name="Keystore..logout"></a>
+<a name="module_Keygen..genKeys"></a>
 
-### Keystore~logout()
-Removes any saved keys on disk and clears keys in memory.  Call only when
-    the user chooses "logout."  Do not call when the application exits.
+### Keygen~genKeys([masterPrivateKey], [cpuEntropyBits])
+Synchronous version of generateMasterKeys.
 
-**Kind**: inner method of [<code>Keystore</code>](#Keystore)  
-<a name="Keystore..timeUntilExpire"></a>
+**Kind**: inner method of [<code>Keygen</code>](#module_Keygen)  
 
-### Keystore~timeUntilExpire() ⇒ <code>number</code>
-**Kind**: inner method of [<code>Keystore</code>](#Keystore)  
-**Returns**: <code>number</code> - 0 (expired), null, or milliseconds until expire  
-<a name="Keystore..keepAlive"></a>
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [masterPrivateKey] | [<code>masterPrivateKey</code>](#masterPrivateKey) | <code></code> | When null, a random key   is created.. |
+| [cpuEntropyBits] | <code>number</code> | <code></code> | null to use CPU entropy or 0 for   fast test keys |
 
-### Keystore~keepAlive()
-Keep alive (prevent expiration).  Called automatically if Uri navigation
-    happens or keys are obtained from the keypathStore.  It may be necessary
-    to call this manually.
+<a name="module_Keygen..keyPathAuth"></a>
 
-**Kind**: inner method of [<code>Keystore</code>](#Keystore)  
-<a name="Keystore..keyProvider"></a>
+### Keygen~keyPathAuth : <code>Object.&lt;keyPath, auth&gt;</code>
+**Kind**: inner typedef of [<code>Keygen</code>](#module_Keygen)  
+<a name="module_Keygen..keyPathPrivateKey"></a>
 
-### Keystore~keyProvider()
-**Kind**: inner method of [<code>Keystore</code>](#Keystore)  
-**See**: https://github.com/eosio/eosjs  
+### Keygen~keyPathPrivateKey : <code>Object.&lt;keyPath, privateKey&gt;</code>
+**Kind**: inner typedef of [<code>Keygen</code>](#module_Keygen)  
 <a name="pubkey"></a>
 
 ## pubkey : <code>string</code>

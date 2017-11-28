@@ -11,9 +11,9 @@
     "coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/.bin/coveralls",
     "prepublish": "npm run build_lib && npm run docs",
     "build": "npm run docs && npm run build_lib && npm run build_browser",
-    "docs": "jsdoc2md src/keystore.js src/index.js src/jsdoc-types.js > API.md",
+    "docs": "jsdoc2md src/keystore.js src/keygen.js src/jsdoc-types.js > API.md",
     "build_lib": "babel src --out-dir lib",
-    "build_browser": "mkdir -p dist && browserify -o dist/eosjs-keygen.js -s KeyGen src/index.js"
+    "build_browser": "mkdir -p dist && browserify -o dist/eosjs-keygen.js -s kos src/index.js"
   },
   "repository": {
     "type": "git",

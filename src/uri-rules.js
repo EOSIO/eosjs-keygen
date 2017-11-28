@@ -28,7 +28,7 @@ function UriRules(rules) {
     account.permissions and gathered in the keystore.login function.
   
     @return {{allow: Array<keyPath>, deny: Array<keyPath>}} - paths allowed or
-    denied under current Uri.  This tells the keypathStore, according to the
+    denied under current Uri.  This tells the keystore, according to the
     Uri rules to generate, save, or remove private keys only for these paths.
   */
   function check(uri, paths) {

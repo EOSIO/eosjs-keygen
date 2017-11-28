@@ -10,15 +10,39 @@ Status: **Active Development, breaking changes..**
 ### Usage
 
 ```javascript
-Keystore = require('eosjs-keygen')
+let {Keystore, Keygen} = require('eosjs-keygen')
+
+Eos = require('eosjs')
+
+Keygen.generateMasterKeys().then(keys => {
+  // create blockchain account called 'myaccount'
+  console.log(keys)
+})
+
+sessionConfig = {
+  timeoutInMin: 30,
+  uriRules: {
+    'owner' : '/account_recovery',
+    'active': '/(transfer|contracts)',
+    'active/**': '/producers'
+  }
+}
+
+keystore = Keystore('myaccount', sessionConfig)
+eos = Eos.Testnet({keyProvider: keystore.keyProvider})
+
+eos.getAccount('myaccount').then(account => {
+  keystore.deriveKeys('myaccount', account.permissions)
+})
+
 ```
 
-See [API](./API.md)
+See [./API](./API.md)
 
 # Development
 
 ```javascript
-KeyGen = require('./src')
+let {Keystore, Keygen} = require('./src')
 ```
 
 Use Node v8+ (updates `package-lock.json`)
@@ -36,7 +60,8 @@ npm run build
 ```html
 <script src="eosjs-keygen.js"></script>
 <script>
-var keyGen = KeyGen()
+//kos.Keystore
+//kos.Keygen
 //...
 </script>
 ```
