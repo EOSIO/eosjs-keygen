@@ -11,13 +11,7 @@ Status: **Active Development, breaking changes..**
 
 ```javascript
 let {Keystore, Keygen} = require('eosjs-keygen')
-
 Eos = require('eosjs')
-
-Keygen.generateMasterKeys().then(keys => {
-  // create blockchain account called 'myaccount'
-  console.log(keys)
-})
 
 sessionConfig = {
   timeoutInMin: 30,
@@ -31,10 +25,18 @@ sessionConfig = {
 keystore = Keystore('myaccount', sessionConfig)
 eos = Eos.Testnet({keyProvider: keystore.keyProvider})
 
-eos.getAccount('myaccount').then(account => {
-  keystore.deriveKeys('myaccount', account.permissions)
-})
+Keygen.generateMasterKeys().then(keys => {
+  // create blockchain account called 'myaccount'
+  console.log(keys)
 
+  eos.getAccount('myaccount').then(account => {
+    keystore.deriveKeys({
+      parent: keys.masterPrivateKey,
+      accountPermissions: account.permissions
+    })
+  })
+
+})
 ```
 
 See [./API](./API.md)

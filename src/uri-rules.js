@@ -77,6 +77,10 @@ function createUrlRules(uriMatchers) {
 function checkUrl(uri, paths, rules) {
   assert.equal(typeof uri, 'string', 'uri')
 
+  if(typeof paths === 'string') {
+    paths = [paths]
+  }
+
   assert(paths instanceof Array || paths instanceof Set,
     'paths is a Set or Array')
 

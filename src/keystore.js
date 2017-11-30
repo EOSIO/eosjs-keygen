@@ -3,16 +3,15 @@
 const assert = require('assert')
 const {PrivateKey} = require('eosjs-ecc')
 const ecc = require('eosjs-ecc')
+const minimatch = require('minimatch')
 
 const Keygen = require('./keygen')
 const UriRules = require('./uri-rules')
 const validate = require('./validate')
 const history = require('./config').history
 
-
 const {localStorage} = require('./config')
 const userStorage = require('./keypath-utils')('kstor')
-
 
 module.exports = Keystore
 
@@ -28,14 +27,15 @@ module.exports = Keystore
   @arg {number} [config.timeoutInMin = 30]
   @arg {uriRules} [config.uriRules] - Specify which type of private key will
   be available on certain pages of the application.  Lock it down as much as
-  possible and later re-prompt the user if a key is needed.
+  possible and later re-prompt the user if a key is needed.  Default is to
+  allow all.
 */
 function Keystore(accountName, config = {}) {
   assert.equal(typeof accountName, 'string', 'accountName')
   assert.equal(typeof config, 'object', 'config')
 
   const configDefaults = {
-    uriRules: {},
+    uriRules: {'**': '.*'},
     timeoutInMin: 30
   }
 
@@ -55,88 +55,187 @@ function Keystore(accountName, config = {}) {
     state[storageKey] = wif
   })
 
+  unlistenHistory = history.listen(() => {
+    keepAlive()
+
+    // Prevent certain private keys from being available to high-risk pages.
+    const paths = getKeyPaths().wif
+    const pathsToPurge = uriRules.check(paths, currentUriPath()).deny
+    removeKeys(pathsToPurge/*, keepPublicKeys*/)
+  })
+
+  if(config.timeoutInMin != null) {
+    keepAlive()
+    function tick() {
+      if(timeUntilExpire() === 0) {
+        expire()
+      }
+    }
+    // A small expireIntervalTime may be used for unit testing
+    const expireIntervalTime = Math.min(sec, config.timeoutInMin)
+    expireInterval = setInterval(tick, expireIntervalTime)
+  }
+
   /**
     Creates private keys and saves them for use on demand.  This
     may be called to add additional keys which were removed as a result of Uri
     navigation or from calling logout.
 
     It is possible for the same user to login more than once using a different
-    parentPrivateKey (master password or private key).  The purpose is to add
+    parent (master password or private key).  The purpose is to add
     additional keys to the keystore.
 
-    @arg {parentPrivateKey} parentPrivateKey - Master password (masterPrivateKey),
+    @arg {object} params
+    @arg {parentPrivateKey} params.parent - Master password (masterPrivateKey),
     active, owner, or other permission key.
 
-    @arg {Array<keyPathMatcher>} [saveLoginsByPath] - These permissions will be
+    @arg {Array<keyPathMatcher>} [params.saveKeyMatches] - These permissions will be
     saved to disk. (example: [`active/**`, ..]). A timeout will not
     expire, logout to remove.
 
     An exception is thrown if an owner or active key save is attempted.
 
-    @arg {accountPermissions} accountPermissions - Permissions object from Eos
-    blockchain via get_account.  This is used to validate the parentPrivateKey
-    and derive additional permission keys.  This allows this keystore
-    to detect incorrect passwords early before trying to sign a transaction.
+    @arg {accountPermissions} [params.accountPermissions] - Permissions object
+    from Eos blockchain via get_account.  This is used to validate the parent
+    and derive additional permission keys.  This allows this keystore to detect
+    incorrect passwords early before trying to sign a transaction.
 
     See Chain API `get_account => account.permissions`.
 
     @throws {Error} 'invalid login'
   */
-  function deriveKeys( // deriveKeys (todo rename)
-    parentPrivateKey,
-    saveLoginsByPath = [],
+  function deriveKeys({
+    parent,
+    saveKeyMatches = [],
     accountPermissions
-  ) {
-    const keyType = validate.keyType(parentPrivateKey)
+  }) {
+    keepAlive()
+
+    assert(parent != null, 'parent is a master password or private key')
+
+    const keyType = validate.keyType(parent)
+    assert(/master|wif|privateKey/.test(keyType),
+      'parentPrivateKey is a masterPrivateKey or private key')
+
+    saveKeyMatches.forEach(m => {
+      if(minimatch('owner', m)) {
+        throw new Error('do not save owner key to disk')
+      }
+      // if(minimatch('active', m)) {
+      //   throw new Error('do not save active key to disk')
+      // }
+    })
+
+    assert(typeof accountPermissions === 'object' || accountPermissions == null,
+      'accountPermissions is an optional object')
+
+    // cache the public key (that is a slow calculation)
+    const Keypair = privateKey => ({
+      privateKey,
+      pubkey: privateKey.toPublic().toString()
+    })
+
+    const parentKeys = {}
     if(keyType === 'master') {
-      parentPrivateKey = PrivateKey(parentPrivateKey.substring(2))
+      const masterPrivateKey = PrivateKey(parent.substring(2))
+      parentKeys.owner = Keypair(masterPrivateKey.getChildKey('owner'))
+      parentKeys.active = Keypair(parentKeys.owner.privateKey.getChildKey('active'))
     } else {
-      parentPrivateKey = PrivateKey(parentPrivateKey)
+      // unknown (for now..)
+      parentKeys.other = Keypair(PrivateKey(parent))
     }
 
-    assert(parentPrivateKey != null,
-      'parentPrivateKey is a master password or private key')
+    if(accountPermissions) {
+      userStorage.save(
+        localStorage,
+        [accountName, 'permissions'],
+        accountPermissions,
+        false // immutable
+      )
+    } else {
+      accountPermissions = JSON.parse(
+        userStorage.get(localStorage, [accountName, 'permissions'])
+      )
+    }
+
+    assert(accountPermissions, 'deriveKeys needs accountPermissions')
 
     const authsByPath = Keygen.authsByPath(accountPermissions)
 
-    const pathsForAccount = Object.keys(authsByPath)
-    const pathsForUrl = uriRules.check(currentUriPath(), pathsForAccount)
-
-    // removeKey(pathsForUrl.deny/*, keepPublicKeys*/)
-
-    // const loginPrivate = Keygen.keysByPath(pathsForUrl.allow, authsByPath)
-    // const keys = Keygen.keysByPath(
-    //   parentPrivateKey,
-    //   accountPermissions,
-    //   paths => {
-    //     return paths.filter(path => !purges.contains(path))
-    //   }
-    // )
-
-    // keys.forEach(([path, wif, pubkey]) => {
-    //   addKey(path, wif)
-    // })
-
-    unlistenHistory = history.listen(() => {
-      keepAlive()
-
-      // Prevent certain private keys from being available to high-risk pages.
-      const paths = getKeyPaths().wif
-      const pathsToPurge = uriRules.check(paths, currentUriPath()).deny
-      removeKey(pathsToPurge/*, keepPublicKeys*/)
+    // Don't allow active key to appear anywhere other than "active"
+    authsByPath.active.keys.forEach(activePub => {
+      for(const other in authsByPath) {
+        if(other === 'active') {
+          continue
+        }
+        authsByPath[other].keys.forEach(otherPub => {
+          if(otherPub.key === activePub.key) {
+            throw new Error('active key reused in authority: ' + other)
+          }
+        })
+      }
     })
 
-    if(config.timeoutInMin != null) {
-      keepAlive()
-      function tick() {
-        if(timeUntilExpire() === 0) {
-          expire()
+    // check login, update storage..
+    let match = false, allow = false
+    for(const path in authsByPath) {
+      const auth = authsByPath[path]
+
+      for(const parentPath in parentKeys) {
+        const parentKey = parentKeys[parentPath] // owner, active, other
+
+        if(auth.keys.find(k => k.key === parentKey.pubkey) != null) {
+          match = true
+
+          const disk = saveKeyMatches.find(m => minimatch(path, m)) != null
+
+          // update storage..
+          const update = addKey(path, parentKey.privateKey, disk)
+          if(update) {
+            allow = true
+            if(update.dirty) { // ram or disk changed
+
+              // remove so these will be re-derived 
+              const children = getKeys(`${path}/**`).map(k => k.path)
+              removeKeys(children)
+            }
+          }
         }
       }
+    }
 
-      // A small expireIntervalTime may be used for unit testing
-      const expireIntervalTime = Math.min(sec, config.timeoutInMin)
-      expireInterval = setInterval(tick, expireIntervalTime)
+    if(!match) {
+      throw new Error('invalid login')
+    }
+
+    if(!allow) {
+      // uri rules blocked every key
+      throw new Error('invalid login for page')
+    }
+
+    // derive other keys
+
+    // getKeys => {path, pubkey, wif}
+    const wifsByPath = {}
+    getKeys().filter(k => !!k.wif).forEach(k => {
+      wifsByPath[k.path] = k.wif
+    })
+
+    for(const path in authsByPath) {
+      if(!wifsByPath[path]) {
+        const keys = Keygen.deriveKeys(path, wifsByPath)
+        if(keys.length) {
+          const authorizedKeys = authsByPath[path].keys.map(k => k.key)
+          for(const key of keys) {
+            const inAuth = !!authorizedKeys.find(k => k === key.privateKey.toPublic().toString())
+            if(inAuth) {
+              wifsByPath[key.path] = key.privateKey.toWif()
+              const disk = saveKeyMatches.find(m => minimatch(key.path, m)) != null
+              addKey(key.path, key.privateKey, disk)
+            }
+          }
+        }
+      }
     }
   }
 
@@ -150,10 +249,15 @@ function Keystore(accountName, config = {}) {
 
     @throws {AssertionError} path error or active, owner/* disk save attempted
 
-    @return {{wif, pubkey}}
+    @return {object} {wif, pubkey, dirty} or null (denied by uriRules)
   */
   function addKey(path, key, disk = false) {
     validate.path(path)
+    keepAlive()
+
+    if(uriRules.deny(currentUriPath(), path).length) {
+      return null
+    }
 
     const keyType = validate.keyType(key)
     assert(/^wif|pubkey|privateKey$/.test(keyType),
@@ -181,11 +285,12 @@ function Keystore(accountName, config = {}) {
 
     const storageKey = userStorage.createKey(accountName, 'kpath', path, pubkey)
 
-    userStorage.save(state, storageKey, wif)
+    let dirty = userStorage.save(state, storageKey, wif)
     if(disk) {
-      userStorage.save(localStorage, storageKey, wif)
+      dirty = userStorage.save(localStorage, storageKey, wif) && dirty
     }
-    return {wif, pubkey}
+
+    return {wif, pubkey, dirty}
   }
 
   /**
@@ -195,6 +300,8 @@ function Keystore(accountName, config = {}) {
     @return {object} {pubkey: Array<pubkey>, wif: Array<wif>}
   */
   function getKeyPaths() {
+    keepAlive()
+
     const pubs = new Set()
     const wifs = new Set()
 
@@ -214,37 +321,39 @@ function Keystore(accountName, config = {}) {
   }
 
   /**
-    @arg {keyPath}
+    @arg {keyPathMatcher}
     @return {Array<pubkey>} public keys (probably one) or empty array
   */
-  function getPublicKeys(path) {
-    return getKeys(path).pubkey
+  function getPublicKeys(keyPathMatcher) {
+    return getKeys(keyPathMatcher).map(key => key.pubkey)
   }
 
   /**
     Return private key for a path.
-    @arg {keyPath}
+    @arg {keyPathMatcher}
     @return {Array<wif>} wifs (probably one) or empty array
   */
-  function getPrivateKeys(path) {
-    return getKeys(path).wif
+  function getPrivateKeys(keyPathMatcher) {
+    return getKeys(keyPathMatcher).filter(key => !!key.wif).map(key => key.wif)
   }
 
   /**
-    @arg {keyPath}
-    @return {object} {pubkey: Array<pubkey>, wif: Array<wif>} or empty arrays
+    @arg {keyPath} [keyPathMatcher] or null to match all
+    @return {Array<keyPathPrivate>} [{path, pubkey, wif}]
   */
-  function getKeys(path) {
-    validate.path(path)
+  function getKeys(keyPathMatcher) {
+    keepAlive()
 
-    const pubs = new Set()
-    const wifs = new Set()
+    const keys = []
 
     function query(store) {
       userStorage.query(store, [accountName, 'kpath'], ([path, pubkey], wif) => {
-        pubs.add(pubkey)
-        if(wif != null) {
-          wifs.add(wif)
+        if(keyPathMatcher == null || minimatch(path, keyPathMatcher)) {
+          const result = {path, pubkey}
+          if(wif != null) {
+            result.wif = wif
+          }
+          keys.push(result)
         }
       })
     }
@@ -252,13 +361,13 @@ function Keystore(accountName, config = {}) {
     query(state)
     query(localStorage)
 
-    return {pubkey: Array.from(pubs), wif: Array.from(wifs)}
+    return keys
   }
 
   /**
     Remove a key or keys from this key store (ram and disk).
 
-    @arg {keyPath|Array<keyPath>|Set<keyPath>}
+    @arg {keyPathMatcher|Array<keyPathMatcher>|Set<keyPathMatcher>}
 
     @arg {boolean} keepPublicKeys - Enable for better UX; show users keys they
     have access too without requiring them to login. Logging in brings a
@@ -267,9 +376,7 @@ function Keystore(accountName, config = {}) {
     The UX should implement this behavior in a way that is clear public keys
     are cached before enabling this feature.
   */
-  function removeKey(paths, keepPublicKeys = false) {
-    // console.log('keystore ==> remove paths', paths)
-
+  function removeKeys(paths, keepPublicKeys = false) {
     if(typeof paths === 'string') {
       paths = [paths]
     }
@@ -277,7 +384,9 @@ function Keystore(accountName, config = {}) {
     for(const path of paths) {
       validate.path(path)
     }
-    
+
+    keepAlive()
+
     function clean(store, prefix) {
       for(const key in store) {
         if(key.indexOf(prefix) === 0) {
@@ -353,6 +462,8 @@ function Keystore(accountName, config = {}) {
 
   /** @see https://github.com/eosio/eosjs */
   function keyProvider(/*{transaction}*/) {
+    keepAlive()
+
     return getKeyPaths().wif.map(path =>
       getPrivateKey(path)
     )
@@ -365,7 +476,7 @@ function Keystore(accountName, config = {}) {
     getPublicKeys,
     getPrivateKeys,
     getKeys,
-    removeKey,
+    removeKeys,
     logout,
     timeUntilExpire,
     keepAlive,
@@ -375,7 +486,7 @@ function Keystore(accountName, config = {}) {
 
 /** @private */
 function currentUriPath() {
-  const location = history.location
+  const {location} = history
   return `${location.pathname}${location.search}${location.hash}`
 }
 

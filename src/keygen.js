@@ -8,8 +8,8 @@ const validate = require('./validate')
 module.exports = {
   generateMasterKeys,
   authsByPath,
-  keysByPath,
   genKeys,
+  deriveKeys
 }
 
 /**
@@ -43,7 +43,12 @@ function generateMasterKeys(cpuEntropyBits) {
 }
 
 /** @typedef {Object<keyPath, auth>} keyPathAuth */
+
 /**
+  Recursively create keyPath using the parent links in the blockchain
+  account's permission object.  Under this keyPath, store the full
+  required_auth structure for later inspection.
+
   @arg {accountPermissions}
   @return {object<keyPathAuth>}
 */
@@ -90,40 +95,6 @@ function authsByPath(accountPermissions) {
   return auths
 }
 
-/** @typedef {Object<keyPath, privateKey>} keyPathPrivateKey */
-
-/**
-  Derive key path and its corresponding privateKey for a given parent key
-  and a blockchain account.
-
-  @arg {parentPrivateKey} parentPrivateKey - Master password, active, owner, or
-    other key in the account's permission.
-
-  @arg {object<keyPathAuth>} pathsByAuth - see keygen.authsByPath(..)
-
-  @return {Array<keyPathPrivateKey>} - Selected keys or empty array
-*/
-function keysByPath(parentPrivateKey, pathsByAuth) {
-  const keyType = validate.keyType(parentPrivateKey)
-  assert(/master|wif|privateKey/.test(keyType),
-    'parentPrivateKey is a masterPrivateKey or private key')
-
-  // assert(Array.isArray(accountPermissions), 'accountPermissions is an array')
-  // accountPermissions.forEach(perm => assert.equal(typeof perm, 'object', 
-  //   'accountPermissions is an array of objects'))
-
-  const result = []
-  if(keyType === 'master') {
-    const masterPrivateKey = parentPrivateKey
-    const loginKeys = genKeys(masterPrivateKey)
-    // const roleKeys = keysByRole(acccountPermissions, 'owner')
-    // const okeys.publicKeys.owner === 
-  }
-}
-
-// @arg {function} selector(path) - Return `false` to skip a key path (public
-//   key calculation is expensive).
-
 /**
   Synchronous version of generateMasterKeys.
 
@@ -157,3 +128,53 @@ function genKeys(masterPrivateKey, cpuEntropyBits) {
     }
   }
 }
+
+/**
+  Derive missing intermediate keys and paths for the given path.
+
+  @return [{path, privateKey}] newly derived keys or empty array (keys already
+  exist or can't be derived).
+*/
+function deriveKeys(path, wifsByPath) {
+  validate.path(path)
+  assert.equal(typeof wifsByPath, 'object', 'wifsByPath')
+
+  if(wifsByPath[path]) {
+    return []
+  }
+
+  let maxLen = 0
+  let bestPath = 0
+
+  const paths = Object.keys(wifsByPath)
+  for(const wifPath in wifsByPath) {
+    if(path.indexOf(`${wifPath}/`) === 0) {
+      if(wifPath.length > maxLen){
+        maxLen = wifPath.length
+        bestPath = wifPath
+      }
+    }
+  }
+
+  if(!bestPath) {
+    return []
+  }
+
+  const newKeys = []
+  let extendedPath = bestPath
+  let extendedPrivate = PrivateKey(wifsByPath[bestPath])
+
+  for(const extend of path.substring(bestPath.length + '/'.length).split('/')) {
+    extendedPrivate = extendedPrivate.getChildKey(extend)
+    extendedPath += `/${extend}`
+    newKeys.push({
+      path: extendedPath,
+      privateKey: extendedPrivate
+    })
+  }
+
+  return newKeys
+}
+
+
+

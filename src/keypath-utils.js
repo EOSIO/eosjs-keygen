@@ -17,27 +17,58 @@ function Storage(namespace) {
   /**
     Save but do not remove a value from state.
 
+    @return {boolean} dirty
     @throws {AssertionError} immutable
   */
   function save(state, key, value, immutable = true) {
+    assert.equal(typeof state, 'object', 'state')
+
+    key = Array.isArray(key) ? createKey(key) : key
     assert.equal(typeof key, 'string', 'key')
+
+    value = typeof value === 'object' ? JSON.stringify(value) : value
+
     if(value == null) {
-      state[key] = value
-      return
+      const dirty = state[key] !== value
+
+      if(dirty) {
+        state[key] = value
+      }
+
+      return dirty
     }
 
-    assert.equal(typeof value, 'string', 'value')
+    assert(typeof value === 'string', 'value is a string or a serializable object')
 
     const existing = state[key]
-    const dirty = existing != value
+    const dirty = existing !== value
     assert(existing == null || !dirty || !immutable, 'immutable')
 
     if(dirty) {
       // console.log('save', key, value)
       state[key] = value
     }
+
+    return dirty
   }
 
+  /**
+    @arg {object} state
+    @arg {string|Array} key
+    @arg {string} [defaultValue]
+
+    @return {string}
+  */
+  function get(state, key, defaultValue) {
+    assert.equal(typeof state, 'object', 'state')
+
+    key = Array.isArray(key) ? createKey(key) : key
+    assert.equal(typeof key, 'string', 'key')
+
+    const value = state[stateKey]
+    return value == null ? defaultValue : value
+  }
+  
   /**
     @arg {object} state - localStorage, etc
     @arg {Array<string>} keyPrefix - index, if partial path, the rest of the
@@ -46,6 +77,10 @@ function Storage(namespace) {
     @arg {function} callback(keySuffix = [], value) 
   */
   function query(state, keyPrefix, callback) {
+    assert.equal(typeof state, 'object', 'state')
+    assert(Array.isArray(keyPrefix), 'keyPrefix is an array')
+    assert.equal(typeof callback, 'function', 'callback')
+
     const prefix = createKey(...keyPrefix)
     for(const key of Object.keys(state)) {
       if(key.indexOf(prefix) !== 0) {

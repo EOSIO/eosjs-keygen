@@ -116,6 +116,16 @@
 */
 
 /**
+  An expanded version of a private key, a keypath ('active/mypermission'),
+  and its calculated public key (for performance reasons).
+
+  @typedef {object} keyPathPrivate
+  @property {wif} wif 
+  @property {pubkey} pubkey
+  @property {keyPath} path
+*/
+
+/**
   Glob matching expressions (`active`, `active/**`, `owner/*`).
   @see https://www.npmjs.com/package/minimatch
   @typedef {string} minimatch

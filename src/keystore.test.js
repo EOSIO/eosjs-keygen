@@ -6,7 +6,7 @@ const config = require('./config')
 
 const Keystore = require('./keystore.js')
 
-let pathname = '/'
+let pathname
 let historyListener
 
 config.history = {
@@ -31,6 +31,7 @@ function reset() {
 
 describe('Keystore', () => {
   beforeEach(() => {
+    pathname = '/'
     reset()
   })
 
@@ -42,10 +43,39 @@ describe('Keystore', () => {
     Keystore('uid')
   })
 
-  it('deriveKeys', () => {
-    const pw = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
+  it('derive other keys', () => {
     const keystore = Keystore('uid')
-    keystore.deriveKeys(pw, 'active/**', accountPermissions)
+    const master = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
+    keystore.deriveKeys({parent: master, accountPermissions})
+
+    const keyPaths = ['active', 'owner', 'active/mypermission']
+    assert.deepEqual(keystore.getKeyPaths(), {pubkey: keyPaths, wif: keyPaths})
+  })
+
+  // it('derive other keys', () => {
+  //   const keystore = Keystore('uid')
+  //   const master = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
+  //   keystore.deriveKeys({parent: master, accountPermissions})
+  // 
+  //   const keyPaths = ['active', 'active/mypermission', 'owner']
+  //   assert.deepEqual(keystore.getKeyPaths(), {pubkey: keyPaths, wif: keyPaths})
+  // })
+
+  it('uri rules history', () => {
+    const master = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
+
+    const uriRules = {
+      'owner': '/account_recovery'
+    }
+
+    keystore = Keystore('uid', uriRules)
+    keystore.deriveKeys({parent: master, accountPermissions})
+
+    assert.deepEqual(keystore.getKeyPaths(), {pubkey: [], wif: []})
+
+    pathname = '/account_recovery'
+    keystore.deriveKeys({parent: master, accountPermissions})
+    assert.deepEqual(keystore.getKeyPaths(), {pubkey: [], wif: []})
   })
 
   it('save disk security', () => {
@@ -71,8 +101,8 @@ describe('Keystore', () => {
     const publicKey = privateKey.toPublic()
     const pubkey = publicKey.toString()
 
-    assert.deepEqual(save(privateKey), {wif, pubkey})
-    assert.deepEqual(save(wif), {wif, pubkey})
+    assert.deepEqual(save(privateKey), {wif, pubkey, dirty: true})
+    assert.deepEqual(save(wif), {wif, pubkey, dirty: false})
     assert.deepEqual(save(publicKey), {wif: null, pubkey})
     assert.deepEqual(save(pubkey), {wif: null, pubkey})
   })
@@ -84,7 +114,7 @@ describe('Keystore', () => {
     const wif = privateKey.toWif()
     const pubkey = privateKey.toPublic().toString()
 
-    assert.deepEqual(keystore.addKey('owner', wif), {wif, pubkey})
+    assert.deepEqual(keystore.addKey('owner', wif), {wif, pubkey, dirty: true})
     assert.deepEqual(keystore.getKeyPaths(), {
       pubkey: ['owner'],
       wif: ['owner']
@@ -95,7 +125,8 @@ describe('Keystore', () => {
     // keep the owner key above, add public key active/mypermission
     assert.deepEqual(keystore.addKey('active/mypermission', pubkey), {
       wif: null,
-      pubkey
+      pubkey,
+      dirty: true
     })
     assert.deepEqual(keystore.getKeyPaths(), {
       pubkey: ['owner', 'active/mypermission'],
@@ -115,22 +146,22 @@ describe('Keystore', () => {
     })
   })
 
-  it('removeKey', () => {
+  it('removeKeys', () => {
     keystore = Keystore('myaccount')
 
     const privateKey = PrivateKey.randomKey(0)
     const wif = privateKey.toWif()
     const pubkey = privateKey.toPublic().toString()
 
-    assert.deepEqual(keystore.addKey('owner', wif), {wif, pubkey})
+    assert.deepEqual(keystore.addKey('owner', wif), {wif, pubkey, dirty: true})
 
-    keystore.removeKey('owner', true/*keepPublicKeys*/)
+    keystore.removeKeys('owner', true/*keepPublicKeys*/)
     assert.deepEqual(keystore.getKeyPaths(), {
       pubkey: ['owner'],
       wif: []
     })
 
-    keystore.removeKey(new Set(['owner']), false/*keepPublicKeys*/)
+    keystore.removeKeys(new Set(['owner']), false/*keepPublicKeys*/)
     assert.deepEqual(keystore.getKeyPaths(), {pubkey: [], wif: []})
   })
 
