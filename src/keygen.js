@@ -132,7 +132,7 @@ function genKeys(masterPrivateKey, cpuEntropyBits) {
 /**
   Derive missing intermediate keys and paths for the given path.
 
-  @return [{path, privateKey}] newly derived keys or empty array (keys already
+  @return {Array} [{path, privateKey}] newly derived keys or empty array (keys already
   exist or can't be derived).
 */
 function deriveKeys(path, wifsByPath) {
