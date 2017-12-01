@@ -177,14 +177,6 @@ function Keystore(accountName, config = {}) {
 
     assert(accountPermissions, 'accountPermissions is required at this point')
 
-    // cache
-    userStorage.save(
-      localStorage,
-      [accountName, 'permissions'],
-      JSON.stringify(accountPermissions),
-      false // immutable
-    )
-
     const authsByPath = Keygen.authsByPath(accountPermissions)
 
     // Don't allow active key to appear anywhere other than "active"
@@ -201,31 +193,92 @@ function Keystore(accountName, config = {}) {
       }
     })
 
-    // check login, update storage..
-    let match = false, allow = false
+    // cache
+    userStorage.save(
+      localStorage,
+      [accountName, 'permissions'],
+      JSON.stringify(accountPermissions),
+      false // immutable
+    )
+
+    let keyUpdates = [], match = false, allow = false
+
+    // Sync keyUpdates with storage ..
+    function saveKeyUpdates() {
+      // sort key updates so removeKeys will only remove children
+      for(const {path, privateKey} of keyUpdates.sort()) {
+        match = true
+        const disk = saveKeyMatches.find(m => minimatch(path, m)) != null
+        const update = addKey(path, privateKey, disk)
+        if(update) {
+          allow = true
+          if(update.dirty) { // ram or disk changed
+            // remove so these will be re-derived 
+            const children = getKeys(`${path}/**`).map(k => k.path)
+            removeKeys(children)
+          }
+        }
+      }
+    }
+
+    // check existing keys..
     for(const path in authsByPath) {
       const auth = authsByPath[path]
-
       for(const parentPath in parentKeys) {
         const parentKey = parentKeys[parentPath] // owner, active, other
-
         if(auth.keys.find(k => k.key === parentKey.pubkey) != null) {
-          match = true
-          const disk = saveKeyMatches.find(m => minimatch(path, m)) != null
+          keyUpdates.push({path, privateKey: parentKey.privateKey})
+        }
+      }
+    }
 
-          // attempt to store key..
-          const update = addKey(path, parentKey.privateKey, disk)
-          if(update) {
-            allow = true
-            if(update.dirty) { // ram or disk changed
-              // remove so these will be re-derived 
-              const children = getKeys(`${path}/**`).map(k => k.path)
-              removeKeys(children)
+    saveKeyUpdates()
+
+    // Gather up all known keys then derive children
+    const wifsByPath = {}
+
+    // After saveKeyUpdates, fetch the remaining allowed and valid private keys
+    getKeys().filter(k => !!k.wif).forEach(k => {
+      // getKeys => {path, pubkey, wif}
+      wifsByPath[k.path] = k.wif
+    })
+
+    // Combine existing keys in the keystore with any higher permission keys
+    // in wifsByPath that may not exist after this function call.
+    for(const {path, privateKey} of keyUpdates) {
+      if(!wifsByPath[path]) {
+        // These more secure keys could be used to derive less secure
+        // child keys below.
+        wifsByPath[path] = privateKey.toWif()
+      }
+    }
+
+    keyUpdates = []
+
+    // Use all known keys in wifsByPath to derive all known children.
+
+    // Why?  As the user navigates any parent could get removed but the child
+    // could still be allowed.  Good thing we saved the children while we could.
+    for(const path in authsByPath) {
+      if(!wifsByPath[path]) {
+        const keys = Keygen.deriveKeys(path, wifsByPath)
+        if(keys.length) {
+          const authorizedKeys = authsByPath[path].keys.map(k => k.key)
+          for(const key of keys) { // {path, privateKey}
+            const pubkey = key.privateKey.toPublic().toString()
+            const inAuth = !!authorizedKeys.find(k => k === pubkey)
+            if(inAuth) { // if user did not change this key
+              wifsByPath[key.path] = key.privateKey.toWif()
+              keyUpdates.push(key)
             }
           }
         }
       }
     }
+
+    // save allowed children
+    saveKeyUpdates()
+    keyUpdates = []
 
     if(!match) {
       throw new Error('invalid login')
@@ -234,33 +287,6 @@ function Keystore(accountName, config = {}) {
     if(!allow) {
       // uri rules blocked every key
       throw new Error('invalid login for page')
-    }
-
-    // Derive all allowed keys.  As the user navigates any of these keys
-    // or a parent key could be needed / removed.  Keep all of them now.
-
-    const wifsByPath = {}
-    getKeys().filter(k => !!k.wif).forEach(k => {
-      // getKeys => {path, pubkey, wif}
-      wifsByPath[k.path] = k.wif
-    })
-
-    for(const path in authsByPath) {
-      if(!wifsByPath[path]) {
-        const keys = Keygen.deriveKeys(path, wifsByPath)
-        if(keys.length) {
-          const authorizedKeys = authsByPath[path].keys.map(k => k.key)
-          for(const key of keys) {
-            const pubkey = key.privateKey.toPublic().toString()
-            const inAuth = !!authorizedKeys.find(k => k === pubkey)
-            if(inAuth) { // if user did not change this key
-              wifsByPath[key.path] = key.privateKey.toWif()
-              const disk = saveKeyMatches.find(m => minimatch(key.path, m)) != null
-              addKey(key.path, key.privateKey, disk)
-            }
-          }
-        }
-      }
     }
   }
 

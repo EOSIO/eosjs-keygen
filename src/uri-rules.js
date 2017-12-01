@@ -142,7 +142,7 @@ function checkUrl(uri, paths, rules) {
       }
     } else {
       deny.push(path)
-      console.log('WARN, missing uriRule for: ' + uri)
+      // console.log('Missing uriRule for: ' + uri, path)
     }
   }
   assert.equal(paths.length, allow.length + deny.length, 'missing path(s)')

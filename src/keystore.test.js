@@ -102,7 +102,9 @@ describe('Keystore', () => {
     )
 
     pathname = '/account_recovery'
-    keystore.deriveKeys({parent: master, accountPermissions}),
+
+    keystore.deriveKeys({parent: master, accountPermissions})
+
     assert.deepEqual(keystore.getKeyPaths(), {
       pubkey: ['active', 'owner', 'active/mypermission'],
       wif: ['active', 'owner', 'active/mypermission']
@@ -116,6 +118,42 @@ describe('Keystore', () => {
     })
   })
 
+  it('low permission page master login', () => {
+    const uriRules = {
+      'active/mypermission': '/'
+    }
+
+    keystore = Keystore('uid', {uriRules})
+    keystore.deriveKeys({parent: master})
+
+    const keyPaths = ['active/mypermission']
+    assert.deepEqual(
+      keystore.getKeyPaths(),
+      {pubkey: keyPaths, wif: keyPaths}
+    )
+  })
+
+  it('low permission page login', () => {
+    const uriRules = {
+      'active/mypermission': '/'
+    }
+
+    const mypermission =
+      PrivateKey(master.substring(2))
+      .getChildKey('owner')
+      .getChildKey('active')
+      .getChildKey('mypermission')
+
+    keystore = Keystore('uid', {uriRules})
+    keystore.deriveKeys({parent: mypermission})
+
+    const keyPaths = ['active/mypermission']
+    assert.deepEqual(
+      keystore.getKeyPaths(),
+      {pubkey: keyPaths, wif: keyPaths}
+    )
+  })
+
   it('deriveKey disk security', () => {
     keystore = Keystore('myaccount')
     assert.throws(() => 
@@ -123,6 +161,7 @@ describe('Keystore', () => {
       /do not save owner key to disk/
     )
   })
+
   it('addKey disk security', () => {
     keystore = Keystore('myaccount')
 
