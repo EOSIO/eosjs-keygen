@@ -150,13 +150,9 @@ Erase all traces of this keystore (for all users).
 <a name="module_Keystore..Keystore..deriveKeys"></a>
 
 #### Keystore~deriveKeys(params)
-Creates private keys and saves them for use on demand.  This
-    may be called to add additional keys which were removed as a result of Uri
-    navigation or from calling logout.
-
-    It is possible for the same user to login more than once using a different
-    parent (master password or private key).  The purpose is to add
-    additional keys to the keystore.
+Derives and saves private keys used to sign transactions.  This may be
+    called from a login dialog.  Keys may be removed as during Uri
+    navigation or when calling logout.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 **Throws**:
@@ -168,7 +164,7 @@ Creates private keys and saves them for use on demand.  This
 | --- | --- | --- |
 | params | <code>object</code> |  |
 | params.parent | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password (masterPrivateKey),     active, owner, or other permission key. |
-| [params.saveKeyMatches] | [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These permissions will be     saved to disk. (example: [`active/**`, ..]). A timeout will not     expire, logout to remove.     An exception is thrown if an owner or active key save is attempted. |
+| [params.saveKeyMatches] | [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These permissions     will be saved to disk. (example: [`active/**`, ..]). A timeout will not     remove keys saved on disk. |
 | [params.accountPermissions] | [<code>accountPermissions</code>](#accountPermissions) | Permissions object     from Eos blockchain via get_account.  This is used to validate the parent     and derive additional permission keys.  This allows this keystore to detect     incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
 
 <a name="module_Keystore..Keystore..addKey"></a>
@@ -178,7 +174,7 @@ Save a private or public key to the store in either RAM only or RAM and
     disk. Prevents certain key types from being saved on disk.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
-**Returns**: <code>object</code> - {wif, pubkey, dirty} or null (denied by uriRules)  
+**Returns**: <code>object</code> - {[wif], pubkey, dirty} or null (denied by uriRules)  
 **Throws**:
 
 - <code>AssertionError</code> path error or active, owner/* disk save attempted
@@ -201,6 +197,8 @@ Return paths for all available keys.  An empty Set is used if there are
 <a name="module_Keystore..Keystore..getPublicKeys"></a>
 
 #### Keystore~getPublicKeys(keyPathMatcher) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
+Return public keys for a path matcher.
+
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 **Returns**: [<code>Array.&lt;pubkey&gt;</code>](#pubkey) - public keys (probably one) or empty array  
 
@@ -211,7 +209,7 @@ Return paths for all available keys.  An empty Set is used if there are
 <a name="module_Keystore..Keystore..getPrivateKeys"></a>
 
 #### Keystore~getPrivateKeys(keyPathMatcher) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
-Return private key for a path.
+Return private keys for a path matcher.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 **Returns**: [<code>Array.&lt;wif&gt;</code>](#wif) - wifs (probably one) or empty array  
