@@ -3,7 +3,11 @@ const assert = require('assert')
 module.exports = Storage
 
 /**
-  Generic key based storage.  Uses a prefix-friendly key encoding for searching.
+  Generic array key based storage.
+
+  - Allows null or undefined
+  - Uses a prefix-friendly key encoding for searching
+  - Serilization is handled externally
 */
 function Storage(namespace) {
 
@@ -15,34 +19,27 @@ function Storage(namespace) {
   }
 
   /**
-    Save but do not remove a value from state.
+    Save a value to state.
 
     @return {boolean} dirty
     @throws {AssertionError} immutable
   */
-  function save(state, key, value, immutable = true) {
+  function save(state, key, value, {immutable = true, clobber =  true} = {}) {
     assert.equal(typeof state, 'object', 'state')
 
     key = Array.isArray(key) ? createKey(key) : key
     assert.equal(typeof key, 'string', 'key')
 
-    value = typeof value === 'object' ? JSON.stringify(value) : value
+    assert(value == null || typeof value === 'string' || typeof value === 'object',
+      'value should be null, a string, or a serializable object')
 
-    if(value == null) {
-      const dirty = state[key] !== value
-
-      if(dirty) {
-        state[key] = value
-      }
-
-      return dirty
+    const existing = deNull(state[key])
+    if(!clobber && value == null && existing != null) {
+      value = existing
     }
 
-    assert(typeof value === 'string', 'value is a string or a serializable object')
-
-    const existing = state[key]
     const dirty = existing !== value
-    assert(existing == null || !dirty || !immutable, 'immutable')
+    assert(existing == null || !(dirty && immutable), 'immutable')
 
     if(dirty) {
       // console.log('save', key, value)
@@ -59,14 +56,13 @@ function Storage(namespace) {
 
     @return {string}
   */
-  function get(state, key, defaultValue) {
+  function get(state, key) {
     assert.equal(typeof state, 'object', 'state')
 
     key = Array.isArray(key) ? createKey(key) : key
     assert.equal(typeof key, 'string', 'key')
 
-    const value = state[stateKey]
-    return value == null ? defaultValue : value
+    return deNull(state[key])
   }
   
   /**
@@ -87,13 +83,19 @@ function Storage(namespace) {
         continue
       }
       const decodedKeys = JSON.parse('[' + Buffer.from(key, 'hex') + ']')
-      callback(decodedKeys.slice(keyPrefix.length + 1), state[key])
+      callback(decodedKeys.slice(keyPrefix.length + 1), deNull(state[key]))
     }
   }
 
   return {
     createKey,
     save,
+    get,
     query
   }
 }
+
+const deNull = value =>
+  value === 'null' ? null :
+  value === 'undefined' ? undefined :
+  value

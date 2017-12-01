@@ -8,7 +8,7 @@ const minimatch = require('minimatch')
 const Keygen = require('./keygen')
 const UriRules = require('./uri-rules')
 const validate = require('./validate')
-const history = require('./config').history
+const globalConfig = require('./config')
 
 const {localStorage} = require('./config')
 const userStorage = require('./keypath-utils')('kstor')
@@ -55,12 +55,12 @@ function Keystore(accountName, config = {}) {
     state[storageKey] = wif
   })
 
-  unlistenHistory = history.listen(() => {
+  unlistenHistory = globalConfig.history.listen(() => {
     keepAlive()
 
     // Prevent certain private keys from being available to high-risk pages.
     const paths = getKeyPaths().wif
-    const pathsToPurge = uriRules.check(paths, currentUriPath()).deny
+    const pathsToPurge = uriRules.check(currentUriPath(), paths).deny
     removeKeys(pathsToPurge/*, keepPublicKeys*/)
   })
 
@@ -77,23 +77,17 @@ function Keystore(accountName, config = {}) {
   }
 
   /**
-    Creates private keys and saves them for use on demand.  This
-    may be called to add additional keys which were removed as a result of Uri
-    navigation or from calling logout.
-
-    It is possible for the same user to login more than once using a different
-    parent (master password or private key).  The purpose is to add
-    additional keys to the keystore.
+    Derives and saves private keys used to sign transactions.  This may be
+    called from a login dialog.  Keys may be removed as during Uri
+    navigation or when calling logout.
 
     @arg {object} params
     @arg {parentPrivateKey} params.parent - Master password (masterPrivateKey),
     active, owner, or other permission key.
 
-    @arg {Array<keyPathMatcher>} [params.saveKeyMatches] - These permissions will be
-    saved to disk. (example: [`active/**`, ..]). A timeout will not
-    expire, logout to remove.
-
-    An exception is thrown if an owner or active key save is attempted.
+    @arg {Array<keyPathMatcher>} [params.saveKeyMatches] - These permissions
+    will be saved to disk. (example: [`active/**`, ..]). A timeout will not
+    remove keys saved on disk.
 
     @arg {accountPermissions} [params.accountPermissions] - Permissions object
     from Eos blockchain via get_account.  This is used to validate the parent
@@ -117,6 +111,10 @@ function Keystore(accountName, config = {}) {
     assert(/master|wif|privateKey/.test(keyType),
       'parentPrivateKey is a masterPrivateKey or private key')
 
+    if(typeof saveKeyMatches === 'string') {
+      saveKeyMatches = [saveKeyMatches]
+    }
+
     saveKeyMatches.forEach(m => {
       if(minimatch('owner', m)) {
         throw new Error('do not save owner key to disk')
@@ -129,10 +127,25 @@ function Keystore(accountName, config = {}) {
     assert(typeof accountPermissions === 'object' || accountPermissions == null,
       'accountPermissions is an optional object')
 
-    // cache the public key (that is a slow calculation)
+    // cache
+    if(!accountPermissions) {
+      const permissions =
+        userStorage.get(localStorage, [accountName, 'permissions'])
+
+      if(permissions) {
+        accountPermissions = JSON.parse(permissions)
+      }
+    }
+
+    // cache pubkey (that is a slow calculation)
     const Keypair = privateKey => ({
       privateKey,
       pubkey: privateKey.toPublic().toString()
+    })
+
+    // blockchain permission format
+    const perm = (parent, perm_name, pubkey) => ({
+      perm_name, parent, required_auth: {keys: [{key: pubkey}]}
     })
 
     const parentKeys = {}
@@ -140,25 +153,34 @@ function Keystore(accountName, config = {}) {
       const masterPrivateKey = PrivateKey(parent.substring(2))
       parentKeys.owner = Keypair(masterPrivateKey.getChildKey('owner'))
       parentKeys.active = Keypair(parentKeys.owner.privateKey.getChildKey('active'))
+
+      if(!accountPermissions) {
+        accountPermissions = [
+          perm('owner', 'active', parentKeys.active.pubkey),
+          perm('', 'owner', parentKeys.owner.pubkey)
+        ]
+      }
     } else {
-      // unknown (for now..)
-      parentKeys.other = Keypair(PrivateKey(parent))
+      if(accountPermissions) {
+        // unknown for now..
+        parentKeys.other = Keypair(PrivateKey(parent))
+      } else {
+        parentKeys.active = Keypair(PrivateKey(parent))
+        accountPermissions = [
+          perm('owner', 'active', parentKeys.active.pubkey)
+        ]
+      }
     }
 
-    if(accountPermissions) {
-      userStorage.save(
-        localStorage,
-        [accountName, 'permissions'],
-        accountPermissions,
-        false // immutable
-      )
-    } else {
-      accountPermissions = JSON.parse(
-        userStorage.get(localStorage, [accountName, 'permissions'])
-      )
-    }
+    assert(accountPermissions, 'accountPermissions is required at this point')
 
-    assert(accountPermissions, 'deriveKeys needs accountPermissions')
+    // cache
+    userStorage.save(
+      localStorage,
+      [accountName, 'permissions'],
+      JSON.stringify(accountPermissions),
+      false // immutable
+    )
 
     const authsByPath = Keygen.authsByPath(accountPermissions)
 
@@ -186,15 +208,13 @@ function Keystore(accountName, config = {}) {
 
         if(auth.keys.find(k => k.key === parentKey.pubkey) != null) {
           match = true
-
           const disk = saveKeyMatches.find(m => minimatch(path, m)) != null
 
-          // update storage..
+          // attempt to store key..
           const update = addKey(path, parentKey.privateKey, disk)
           if(update) {
             allow = true
             if(update.dirty) { // ram or disk changed
-
               // remove so these will be re-derived 
               const children = getKeys(`${path}/**`).map(k => k.path)
               removeKeys(children)
@@ -213,11 +233,12 @@ function Keystore(accountName, config = {}) {
       throw new Error('invalid login for page')
     }
 
-    // derive other keys
+    // Derive all allowed keys.  As the user navigates any of these keys
+    // or a parent key could be needed / removed.  Keep all of them now.
 
-    // getKeys => {path, pubkey, wif}
     const wifsByPath = {}
     getKeys().filter(k => !!k.wif).forEach(k => {
+      // getKeys => {path, pubkey, wif}
       wifsByPath[k.path] = k.wif
     })
 
@@ -227,8 +248,9 @@ function Keystore(accountName, config = {}) {
         if(keys.length) {
           const authorizedKeys = authsByPath[path].keys.map(k => k.key)
           for(const key of keys) {
-            const inAuth = !!authorizedKeys.find(k => k === key.privateKey.toPublic().toString())
-            if(inAuth) {
+            const pubkey = key.privateKey.toPublic().toString()
+            const inAuth = !!authorizedKeys.find(k => k === pubkey)
+            if(inAuth) { // if user did not change this key
               wifsByPath[key.path] = key.privateKey.toWif()
               const disk = saveKeyMatches.find(m => minimatch(key.path, m)) != null
               addKey(key.path, key.privateKey, disk)
@@ -249,13 +271,14 @@ function Keystore(accountName, config = {}) {
 
     @throws {AssertionError} path error or active, owner/* disk save attempted
 
-    @return {object} {wif, pubkey, dirty} or null (denied by uriRules)
+    @return {object} {[wif], pubkey, dirty} or null (denied by uriRules)
   */
   function addKey(path, key, disk = false) {
     validate.path(path)
     keepAlive()
 
     if(uriRules.deny(currentUriPath(), path).length) {
+      // console.log('Keystore addKey denied: ', currentUriPath(), path);
       return null
     }
 
@@ -285,12 +308,12 @@ function Keystore(accountName, config = {}) {
 
     const storageKey = userStorage.createKey(accountName, 'kpath', path, pubkey)
 
-    let dirty = userStorage.save(state, storageKey, wif)
+    let dirty = userStorage.save(state, storageKey, wif, {clobber: false})
     if(disk) {
-      dirty = userStorage.save(localStorage, storageKey, wif) && dirty
+      dirty = userStorage.save(localStorage, storageKey, wif, {clobber: false}) && dirty
     }
 
-    return {wif, pubkey, dirty}
+    return wif == null ? {pubkey, dirty} : {wif, pubkey, dirty}
   }
 
   /**
@@ -313,7 +336,6 @@ function Keystore(accountName, config = {}) {
         }
       })
     }
-
     query(state)
     query(localStorage)
 
@@ -321,6 +343,7 @@ function Keystore(accountName, config = {}) {
   }
 
   /**
+    Return public keys for a path matcher.
     @arg {keyPathMatcher}
     @return {Array<pubkey>} public keys (probably one) or empty array
   */
@@ -329,12 +352,14 @@ function Keystore(accountName, config = {}) {
   }
 
   /**
-    Return private key for a path.
+    Return private keys for a path matcher.
     @arg {keyPathMatcher}
     @return {Array<wif>} wifs (probably one) or empty array
   */
   function getPrivateKeys(keyPathMatcher) {
-    return getKeys(keyPathMatcher).filter(key => !!key.wif).map(key => key.wif)
+    return getKeys(keyPathMatcher)
+    .filter(key => key.wif != null)
+    .map(key => key.wif)
   }
 
   /**
@@ -486,7 +511,7 @@ function Keystore(accountName, config = {}) {
 
 /** @private */
 function currentUriPath() {
-  const {location} = history
+  const {location} = globalConfig.history
   return `${location.pathname}${location.search}${location.hash}`
 }
 
