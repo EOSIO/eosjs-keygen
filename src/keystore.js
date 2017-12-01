@@ -35,7 +35,10 @@ function Keystore(accountName, config = {}) {
   assert.equal(typeof config, 'object', 'config')
 
   const configDefaults = {
-    uriRules: {'**': '.*'},
+    uriRules: {
+      'active': '.*',
+      'active/**': '.*'
+    },
     timeoutInMin: 30
   }
 
@@ -277,11 +280,6 @@ function Keystore(accountName, config = {}) {
     validate.path(path)
     keepAlive()
 
-    if(uriRules.deny(currentUriPath(), path).length) {
-      // console.log('Keystore addKey denied: ', currentUriPath(), path);
-      return null
-    }
-
     const keyType = validate.keyType(key)
     assert(/^wif|pubkey|privateKey$/.test(keyType),
       'key should be a wif, public key string, or privateKey object')
@@ -292,6 +290,11 @@ function Keystore(accountName, config = {}) {
         'owner derived keys should not be stored on disk')
 
       // assert(path !== 'active', 'active key should not be stored on disk')
+    }
+
+    if(uriRules.deny(currentUriPath(), path).length) {
+      // console.log('Keystore addKey denied: ', currentUriPath(), path);
+      return null
     }
 
     const wif =
