@@ -178,19 +178,27 @@ function Keystore(accountName, config = {}) {
 
     const authsByPath = Keygen.authsByPath(accountPermissions)
 
-    // Don't allow active key to appear anywhere other than "active"
-    authsByPath.active.keys.forEach(activePub => {
-      for(const other in authsByPath) {
-        if(other === 'active') {
-          continue
-        }
-        authsByPath[other].keys.forEach(otherPub => {
-          if(otherPub.key === activePub.key) {
-            throw new Error('active key reused in authority: ' + other)
-          }
-        })
+    // Don't allow key re-use
+    function uniqueKeyByRole(role) {
+      const auth = authsByPath[role]
+      if(auth == null) {
+        return
       }
-    })
+      auth.keys.forEach(rolePub => {
+        for(const other in authsByPath) {
+          if(other === role) {
+            continue
+          }
+          authsByPath[other].keys.forEach(otherPub => {
+            if(otherPub.key === rolePub.key) {
+              throw new Error(role + ' key reused in authority: ' + other)
+            }
+          })
+        }
+      })
+    }
+    uniqueKeyByRole('active')
+    uniqueKeyByRole('owner')
 
     // cache
     userStorage.save(

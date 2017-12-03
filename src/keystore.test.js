@@ -67,17 +67,22 @@ describe('Keystore', () => {
       {pubkey: keyPaths, wif: keyPaths})
   })
 
-  it('block active key re-use', () => {
-    const keystore = Keystore('uid')
-    const perm = JSON.parse(JSON.stringify(accountPermissions))
+  for(const role of ['active', 'owner']) {
+    it(`block ${role} key re-use`, () => {
+      const keystore = Keystore('uid')
+      const perm = JSON.parse(JSON.stringify(accountPermissions))
 
-    const activeWif = perm[0].required_auth.keys[0].key
-    perm[1].required_auth.keys[0].key = activeWif
+      const rolePos = role === 'active' ? 0 : role === 'owner' ? 2 : -1 
+      const wif = perm[rolePos].required_auth.keys[0].key
 
-    assert.throws(() => {
-      keystore.deriveKeys({parent: master, accountPermissions: perm})
-    }, /active key reused in authority/)
-  })
+      perm[(rolePos + 1) % perm.length].required_auth.keys[0].key = wif
+      
+      assert.throws(() => {
+        keystore.deriveKeys({parent: master, accountPermissions: perm})
+      }, / key reused in authority/)
+      // }, new RegExp(`${role} key reused in authority`))
+    })
+  }
 
   it('derive all account permisison keys', () => {
     const keystore = Keystore('uid')
