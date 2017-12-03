@@ -144,14 +144,14 @@
 */
 
 /**
-  A valid regular expression string.  The provided string it modified when
+  A valid regular expression string.  The provided string is modified when
   it is converted to a RegExp object:
 
-  - A start of match is implied (`^` is always added, do not add one)
+  - A start of line match is implied (`^` is always added, do not add one)
   - Unless the uriPath ends with `$`, automatically matches query parameters
     and fragment (hash tag info).
   - The RegExp that is created is always case-insensitive to help a
-    non-canonical path match.  Uri paths should be canonical though.
+    non-canonical path match.  Uri paths should be canonical.
 
   @typedef {string} uriMatcher
 
@@ -183,14 +183,14 @@
 /**
   @typedef {Object<uriRule>} uriRules
 
-  Define rules that says which private keys may exist within given locations
+  Define rules that say which private keys may exist within given locations
   of the application.  If a rule is not found or does not match, the keystore
   will remove the key.  The UI can prompt the user to obtain the needed key
   again.
 
   For any non-trivial configuration, implementions should create a unit test
   that will test the actual configuration used in the application
-  (use ./uri-rules.test.js as a template).
+  (see `./uri-rules.test.js` for a template).
 
   Paths imply that active is always derived from owner.  So, instead of writing
   `owner/active/**` the path must be written as `active/**`.

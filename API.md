@@ -59,14 +59,14 @@
 <dd><p>A URI without the prefixing scheme, host, port.</p>
 </dd>
 <dt><a href="#uriMatcher">uriMatcher</a> : <code>string</code></dt>
-<dd><p>A valid regular expression string.  The provided string it modified when
+<dd><p>A valid regular expression string.  The provided string is modified when
   it is converted to a RegExp object:</p>
 <ul>
-<li>A start of match is implied (<code>^</code> is always added, do not add one)</li>
+<li>A start of line match is implied (<code>^</code> is always added, do not add one)</li>
 <li>Unless the uriPath ends with <code>$</code>, automatically matches query parameters
 and fragment (hash tag info).</li>
 <li>The RegExp that is created is always case-insensitive to help a
-non-canonical path match.  Uri paths should be canonical though.</li>
+non-canonical path match.  Uri paths should be canonical.</li>
 </ul>
 </dd>
 <dt><a href="#uriMatchers">uriMatchers</a> : <code><a href="#uriMatcher">uriMatcher</a></code> | <code><a href="#uriMatcher">Array.&lt;uriMatcher&gt;</a></code></dt>
@@ -74,13 +74,13 @@ non-canonical path match.  Uri paths should be canonical though.</li>
 <dt><a href="#uriRule">uriRule</a> : <code>Object.&lt;keyPathMatcher, uriMatchers&gt;</code></dt>
 <dd></dd>
 <dt><a href="#uriRules">uriRules</a> : <code><a href="#uriRule">Object.&lt;uriRule&gt;</a></code></dt>
-<dd><p>Define rules that says which private keys may exist within given locations
+<dd><p>Define rules that say which private keys may exist within given locations
   of the application.  If a rule is not found or does not match, the keystore
   will remove the key.  The UI can prompt the user to obtain the needed key
   again.</p>
 <p>  For any non-trivial configuration, implementions should create a unit test
   that will test the actual configuration used in the application
-  (use ./uri-rules.test.js as a template).</p>
+  (see <code>./uri-rules.test.js</code> for a template).</p>
 <p>  Paths imply that active is always derived from owner.  So, instead of writing
   <code>owner/active/**</code> the path must be written as <code>active/**</code>.</p>
 </dd>
@@ -164,14 +164,14 @@ Derives and saves private keys used to sign transactions.  This may be
 | --- | --- | --- |
 | params | <code>object</code> |  |
 | params.parent | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password (masterPrivateKey),     active, owner, or other permission key. |
-| [params.saveKeyMatches] | [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These permissions     will be saved to disk. (example: [`active/**`, ..]). A timeout will not     remove keys saved on disk. |
+| [params.saveKeyMatches] | [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These permissions     will be saved to disk. (example: [`active/**`, ..]). |
 | [params.accountPermissions] | [<code>accountPermissions</code>](#accountPermissions) | Permissions object     from Eos blockchain via get_account.  This is used to validate the parent     and derive additional permission keys.  This allows this keystore to detect     incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
 
 <a name="module_Keystore..Keystore..addKey"></a>
 
 #### Keystore~addKey(path, key, disk) ⇒ <code>object</code>
 Save a private or public key to the store in either RAM only or RAM and
-    disk. Prevents certain key types from being saved on disk.
+    disk.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 **Returns**: <code>object</code> - {[wif], pubkey, dirty} or null (denied by uriRules)  
@@ -499,14 +499,14 @@ A URI without the prefixing scheme, host, port.
 <a name="uriMatcher"></a>
 
 ## uriMatcher : <code>string</code>
-A valid regular expression string.  The provided string it modified when
+A valid regular expression string.  The provided string is modified when
   it is converted to a RegExp object:
 
-  - A start of match is implied (`^` is always added, do not add one)
+  - A start of line match is implied (`^` is always added, do not add one)
   - Unless the uriPath ends with `$`, automatically matches query parameters
     and fragment (hash tag info).
   - The RegExp that is created is always case-insensitive to help a
-    non-canonical path match.  Uri paths should be canonical though.
+    non-canonical path match.  Uri paths should be canonical.
 
 **Kind**: global typedef  
 **Example**  
@@ -545,14 +545,14 @@ function createPathMatcher(path) {
 <a name="uriRules"></a>
 
 ## uriRules : [<code>Object.&lt;uriRule&gt;</code>](#uriRule)
-Define rules that says which private keys may exist within given locations
+Define rules that say which private keys may exist within given locations
   of the application.  If a rule is not found or does not match, the keystore
   will remove the key.  The UI can prompt the user to obtain the needed key
   again.
 
   For any non-trivial configuration, implementions should create a unit test
   that will test the actual configuration used in the application
-  (use ./uri-rules.test.js as a template).
+  (see `./uri-rules.test.js` for a template).
 
   Paths imply that active is always derived from owner.  So, instead of writing
   `owner/active/**` the path must be written as `active/**`.

@@ -89,8 +89,7 @@ function Keystore(accountName, config = {}) {
     active, owner, or other permission key.
 
     @arg {Array<keyPathMatcher>} [params.saveKeyMatches] - These permissions
-    will be saved to disk. (example: [`active/**`, ..]). A timeout will not
-    remove keys saved on disk.
+    will be saved to disk. (example: [`active/**`, ..]).
 
     @arg {accountPermissions} [params.accountPermissions] - Permissions object
     from Eos blockchain via get_account.  This is used to validate the parent
@@ -292,7 +291,7 @@ function Keystore(accountName, config = {}) {
 
   /**
     Save a private or public key to the store in either RAM only or RAM and
-    disk. Prevents certain key types from being saved on disk.
+    disk.
 
     @arg {keyPath} path - active/mypermission, owner, active, ..
     @arg {string} key - wif, pubkey, or privateKey
