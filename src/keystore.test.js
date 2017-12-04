@@ -96,7 +96,6 @@ describe('Keystore', () => {
     const keystore = Keystore('uid')
     keystore.deriveKeys({parent: master, accountPermissions})
 
-    const keyPaths = ['active', 'active/mypermission']
     assert.deepEqual(keystore.getPublicKeys(), [
       'EOS7vgT3ZsuUxWH1tWyqw6cyKqKhPjUFbonZjyrrXqDauty61SrYe',
       'EOS5MiUJEXxjJw6wUcE6yUjxpATaWetubAGUJ1nYLRSHYPpGCJ8ZU'

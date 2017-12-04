@@ -227,9 +227,7 @@ Keep alive (prevent expiration).  Called automatically if Uri navigation
 
 * [Keygen](#module_Keygen)
     * [~generateMasterKeys(cpuEntropyBits)](#module_Keygen..generateMasterKeys) ⇒ <code>Promise</code>
-    * [~authsByPath(accountPermissions)](#module_Keygen..authsByPath) ⇒ <code>object.&lt;keyPathAuth&gt;</code>
     * [~genKeys([masterPrivateKey], [cpuEntropyBits])](#module_Keygen..genKeys)
-    * [~deriveKeys()](#module_Keygen..deriveKeys) ⇒ <code>Array</code>
     * [~keyPathAuth](#module_Keygen..keyPathAuth) : <code>Object.&lt;keyPath, auth&gt;</code>
 
 <a name="module_Keygen..generateMasterKeys"></a>
@@ -256,19 +254,6 @@ New accounts will call this to create a new keyset..
   publicKeys: {owner, active} // <= derived from masterPrivateKey
 }
 ```
-<a name="module_Keygen..authsByPath"></a>
-
-### Keygen~authsByPath(accountPermissions) ⇒ <code>object.&lt;keyPathAuth&gt;</code>
-Recursively create keyPath using the parent links in the blockchain
-  account's permission object.  Under this keyPath, store the full
-  required_auth structure for later inspection.
-
-**Kind**: inner method of [<code>Keygen</code>](#module_Keygen)  
-
-| Param | Type |
-| --- | --- |
-| accountPermissions | [<code>accountPermissions</code>](#accountPermissions) | 
-
 <a name="module_Keygen..genKeys"></a>
 
 ### Keygen~genKeys([masterPrivateKey], [cpuEntropyBits])
@@ -281,14 +266,6 @@ Synchronous version of generateMasterKeys.
 | [masterPrivateKey] | [<code>masterPrivateKey</code>](#masterPrivateKey) | <code></code> | When null, a random key   is created.. |
 | [cpuEntropyBits] | <code>number</code> | <code></code> | null to use CPU entropy or 0 for   fast test keys |
 
-<a name="module_Keygen..deriveKeys"></a>
-
-### Keygen~deriveKeys() ⇒ <code>Array</code>
-Derive missing intermediate keys and paths for the given path.
-
-**Kind**: inner method of [<code>Keygen</code>](#module_Keygen)  
-**Returns**: <code>Array</code> - [{path, privateKey}] newly derived keys or empty array (keys already
-  exist or can't be derived).  
 <a name="module_Keygen..keyPathAuth"></a>
 
 ### Keygen~keyPathAuth : <code>Object.&lt;keyPath, auth&gt;</code>

@@ -298,7 +298,7 @@ function Keystore(accountName, config = {}) {
   }
 
   /**
-    @private
+    @private see keystore.deriveKeys
 
     Save a private or public key to the store in either RAM only or RAM and
     disk.  Typically deriveKeys is used instead.

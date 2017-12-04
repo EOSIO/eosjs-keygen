@@ -45,6 +45,8 @@ function generateMasterKeys(cpuEntropyBits) {
 /** @typedef {Object<keyPath, auth>} keyPathAuth */
 
 /**
+  @private
+
   Recursively create keyPath using the parent links in the blockchain
   account's permission object.  Under this keyPath, store the full
   required_auth structure for later inspection.
@@ -130,6 +132,8 @@ function genKeys(masterPrivateKey, cpuEntropyBits) {
 }
 
 /**
+  @private see keystore.deriveKeys
+
   Derive missing intermediate keys and paths for the given path.
 
   @return {Array} [{path, privateKey}] newly derived keys or empty array (keys already
