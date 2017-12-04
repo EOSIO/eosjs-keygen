@@ -58,31 +58,10 @@ function Keystore(accountName, config = {}) {
     state[storageKey] = wif
   })
 
-  unlistenHistory = globalConfig.history.listen(() => {
-    keepAlive()
-
-    // Prevent certain private keys from being available to high-risk pages.
-    const paths = getKeyPaths().wif
-    const pathsToPurge = uriRules.check(currentUriPath(), paths).deny
-    removeKeys(pathsToPurge/*, keepPublicKeys*/)
-  })
-
-  if(config.timeoutInMin != null) {
-    keepAlive()
-    function tick() {
-      if(timeUntilExpire() === 0) {
-        expire()
-      }
-    }
-    // A small expireIntervalTime may be used for unit testing
-    const expireIntervalTime = Math.min(sec, config.timeoutInMin)
-    expireInterval = setInterval(tick, expireIntervalTime)
-  }
-
   /**
-    Derives and saves private keys used to sign transactions.  This may be
-    called from a login dialog.  Keys may be removed as during Uri
-    navigation or when calling logout.
+    Login or derive and save private keys.  This may be called from a login
+    action.  Keys may be removed as during Uri navigation or when calling
+    logout.
 
     @arg {object} params
     @arg {parentPrivateKey} params.parent - Master password (masterPrivateKey),
@@ -128,6 +107,31 @@ function Keystore(accountName, config = {}) {
 
     assert(typeof accountPermissions === 'object' || accountPermissions == null,
       'accountPermissions is an optional object')
+
+    if(!unlistenHistory) {
+      unlistenHistory = globalConfig.history.listen(() => {
+        keepAlive()
+
+        // Prevent certain private keys from being available to high-risk pages.
+        const paths = getKeyPaths().wif
+        const pathsToPurge = uriRules.check(currentUriPath(), paths).deny
+        removeKeys(pathsToPurge/*, keepPublicKeys*/)
+      })
+    }
+
+    if(!expireInterval) {
+      if(config.timeoutInMin != null) {
+        keepAlive()
+        function tick() {
+          if(timeUntilExpire() === 0) {
+            logout()
+          }
+        }
+        // A small expireIntervalTime may be used for unit testing
+        const expireIntervalTime = Math.min(sec, config.timeoutInMin)
+        expireInterval = setInterval(tick, expireIntervalTime)
+      }
+    }
 
     // cache
     if(!accountPermissions) {
@@ -562,43 +566,6 @@ function Keystore(accountName, config = {}) {
     the user chooses "logout."  Do not call when the application exits.
   */
   function logout() {
-    wipeUser()
-    if(unlistenHistory) {
-      unlistenHistory()
-      unlistenHistory = null
-    }
-    clearInterval(expireInterval)
-  }
-
-  /**
-    @return {number} 0 (expired), null, or milliseconds until expire
-  */
-  function timeUntilExpire() {
-    return
-      expireAt === 0 ? 0 :
-      expireAt == null ? null :
-      Math.max(0, expireAt - Date.now())
-  }
-
-  /**
-    Keep alive (prevent expiration).  Called automatically if Uri navigation
-    happens or keys are required.  It may be necessary to call this manually.
-  */
-  function keepAlive() {
-    expireAt = Date.now() + config.timeoutInMin * min
-  }
-
-  /** @private */
-  function expire() {
-    expireAt = 0
-    wipeSession()
-  }
-
-  /**
-    @private
-    Erase all keys on disk for this user.
-  */
-  function wipeUser() {
     for(const key in state) {
       delete state[key]
     }
@@ -609,6 +576,32 @@ function Keystore(accountName, config = {}) {
         delete localStorage[key]
       }
     }
+
+    clearInterval(expireInterval)
+    expireInterval = null
+
+    unlistenHistory()
+    unlistenHistory = null
+
+    expireAt = null
+  }
+
+  /**
+    @return {number} 0 (expired) or milliseconds until expire
+  */
+  function timeUntilExpire() {
+    return
+      expireAt === 0 ? 0 :
+      expireAt == null ? 0 :
+      Math.max(0, expireAt - Date.now())
+  }
+
+  /**
+    Keep alive (prevent expiration).  Called automatically if Uri navigation
+    happens or keys are required.  It may be necessary to call this manually.
+  */
+  function keepAlive() {
+    expireAt = Date.now() + config.timeoutInMin * min
   }
 
   /** @see https://github.com/eosio/eosjs */
