@@ -96,12 +96,10 @@ non-canonical path match.  Uri paths should be canonical.</li>
             * [.wipeAll()](#module_Keystore..Keystore.wipeAll)
         * _inner_
             * [~deriveKeys(params)](#module_Keystore..Keystore..deriveKeys)
-            * [~addKey(path, key, disk)](#module_Keystore..Keystore..addKey) ⇒ <code>object</code>
             * [~getKeyPaths()](#module_Keystore..Keystore..getKeyPaths) ⇒ <code>object</code>
-            * [~getPublicKeys(keyPathMatcher)](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
-            * [~getPrivateKeys(keyPathMatcher)](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
-            * [~getKeys([keyPathMatcher])](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
-            * [~removeKeys(paths, keepPublicKeys)](#module_Keystore..Keystore..removeKeys)
+            * [~getPublicKeys([keyPathMatcher])](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
+            * [~getPublicKey()](#module_Keystore..Keystore..getPublicKey) ⇒ [<code>pubkey</code>](#pubkey)
+            * [~getPrivateKey()](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
             * [~logout()](#module_Keystore..Keystore..logout)
             * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
             * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
@@ -130,12 +128,10 @@ Provides private key management and storage.
         * [.wipeAll()](#module_Keystore..Keystore.wipeAll)
     * _inner_
         * [~deriveKeys(params)](#module_Keystore..Keystore..deriveKeys)
-        * [~addKey(path, key, disk)](#module_Keystore..Keystore..addKey) ⇒ <code>object</code>
         * [~getKeyPaths()](#module_Keystore..Keystore..getKeyPaths) ⇒ <code>object</code>
-        * [~getPublicKeys(keyPathMatcher)](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
-        * [~getPrivateKeys(keyPathMatcher)](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
-        * [~getKeys([keyPathMatcher])](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
-        * [~removeKeys(paths, keepPublicKeys)](#module_Keystore..Keystore..removeKeys)
+        * [~getPublicKeys([keyPathMatcher])](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
+        * [~getPublicKey()](#module_Keystore..Keystore..getPublicKey) ⇒ [<code>pubkey</code>](#pubkey)
+        * [~getPrivateKey()](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
         * [~logout()](#module_Keystore..Keystore..logout)
         * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
         * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
@@ -167,79 +163,40 @@ Derives and saves private keys used to sign transactions.  This may be
 | [params.saveKeyMatches] | [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These permissions     will be saved to disk. (example: [`active/**`, ..]). |
 | [params.accountPermissions] | [<code>accountPermissions</code>](#accountPermissions) | Permissions object     from Eos blockchain via get_account.  This is used to validate the parent     and derive additional permission keys.  This allows this keystore to detect     incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
 
-<a name="module_Keystore..Keystore..addKey"></a>
-
-#### Keystore~addKey(path, key, disk) ⇒ <code>object</code>
-Save a private or public key to the store in either RAM only or RAM and
-    disk.
-
-**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
-**Returns**: <code>object</code> - {[wif], pubkey, dirty} or null (denied by uriRules)  
-**Throws**:
-
-- <code>AssertionError</code> path error or active, owner/* disk save attempted
-
-
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| path | [<code>keyPath</code>](#keyPath) |  | active/mypermission, owner, active, .. |
-| key | <code>string</code> |  | wif, pubkey, or privateKey |
-| disk | <code>boolean</code> | <code>false</code> | save to persistent storage (localStorage) |
-
 <a name="module_Keystore..Keystore..getKeyPaths"></a>
 
 #### Keystore~getKeyPaths() ⇒ <code>object</code>
-Return paths for all available keys.  An empty Set is used if there are
+Return paths for all available keys.  Empty array is used if there are
     no keys.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 **Returns**: <code>object</code> - {pubkey: Array<pubkey>, wif: Array<wif>}  
 <a name="module_Keystore..Keystore..getPublicKeys"></a>
 
-#### Keystore~getPublicKeys(keyPathMatcher) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
-Return public keys for a path matcher.
+#### Keystore~getPublicKeys([keyPathMatcher]) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
+Return public keys for a path matcher (all keys by default).
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
-**Returns**: [<code>Array.&lt;pubkey&gt;</code>](#pubkey) - public keys (probably one) or empty array  
+**Returns**: [<code>Array.&lt;pubkey&gt;</code>](#pubkey) - public keys or empty array  
 
-| Param | Type |
-| --- | --- |
-| keyPathMatcher | [<code>keyPathMatcher</code>](#keyPathMatcher) | 
-
-<a name="module_Keystore..Keystore..getPrivateKeys"></a>
-
-#### Keystore~getPrivateKeys(keyPathMatcher) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
-Return private keys for a path matcher.
-
-**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
-**Returns**: [<code>Array.&lt;wif&gt;</code>](#wif) - wifs (probably one) or empty array  
-
-| Param | Type |
-| --- | --- |
-| keyPathMatcher | [<code>keyPathMatcher</code>](#keyPathMatcher) | 
-
-<a name="module_Keystore..Keystore..getKeys"></a>
-
-#### Keystore~getKeys([keyPathMatcher]) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
-**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
-**Returns**: [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate) - [{path, pubkey, wif}]  
-
-| Param | Type | Description |
+| Param | Type | Default |
 | --- | --- | --- |
-| [keyPathMatcher] | [<code>keyPath</code>](#keyPath) | or null to match all |
+| [keyPathMatcher] | [<code>keyPathMatcher</code>](#keyPathMatcher) | <code>&#x27;**&#x27;</code> | 
 
-<a name="module_Keystore..Keystore..removeKeys"></a>
+<a name="module_Keystore..Keystore..getPublicKey"></a>
 
-#### Keystore~removeKeys(paths, keepPublicKeys)
-Remove a key or keys from this key store (ram and disk).
+#### Keystore~getPublicKey() ⇒ [<code>pubkey</code>](#pubkey)
+Fetch or derive a public key.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**Returns**: [<code>pubkey</code>](#pubkey) - or null  
+<a name="module_Keystore..Keystore..getPrivateKey"></a>
 
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| paths | [<code>keyPathMatcher</code>](#keyPathMatcher) \| [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) \| [<code>Set.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) |  |  |
-| keepPublicKeys | <code>boolean</code> | <code>false</code> | Enable for better UX; show users keys they     have access too without requiring them to login. Logging in brings a     private key online which is not necessary to see public information.     The UX should implement this behavior in a way that is clear public keys     are cached before enabling this feature. |
+#### Keystore~getPrivateKey() ⇒ [<code>wif</code>](#wif)
+Fetch or derive a private key.
 
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**Returns**: [<code>wif</code>](#wif) - or null (denied for location) or undefined (not available)  
 <a name="module_Keystore..Keystore..logout"></a>
 
 #### Keystore~logout()

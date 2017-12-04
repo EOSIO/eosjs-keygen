@@ -92,6 +92,17 @@ describe('Keystore', () => {
     assert.deepEqual(keystore.getKeyPaths(), {pubkey: keyPaths, wif: keyPaths})
   })
 
+  it('get derived public keys', () => {
+    const keystore = Keystore('uid')
+    keystore.deriveKeys({parent: master, accountPermissions})
+
+    const keyPaths = ['active', 'active/mypermission']
+    assert.deepEqual(keystore.getPublicKeys(), [
+      'EOS7vgT3ZsuUxWH1tWyqw6cyKqKhPjUFbonZjyrrXqDauty61SrYe',
+      'EOS5MiUJEXxjJw6wUcE6yUjxpATaWetubAGUJ1nYLRSHYPpGCJ8ZU'
+    ])
+  })
+
   it('uri rules history', () => {
     const uriRules = {
       'owner': '/account_recovery',
@@ -214,8 +225,15 @@ describe('Keystore', () => {
       pubkey: ['owner'],
       wif: ['owner']
     })
+    assert.deepEqual(keystore.getPublicKeys(), [pubkey])
     assert.deepEqual(keystore.getPublicKeys('owner'), [pubkey])
-    assert.deepEqual(keystore.getPrivateKeys('owner'), [wif])
+
+    assert.deepEqual(keystore.getPublicKey('owner'), pubkey)
+    assert.deepEqual(keystore.getPrivateKey('owner'), wif)
+
+    const cold = privateKey.getChildKey('cold')
+    assert.deepEqual(keystore.getPublicKey('owner/cold'), cold.toPublic().toString())
+    assert.deepEqual(keystore.getPrivateKey('owner/cold'), cold.toWif())
 
     // keep the owner key above, add public key active/other
     assert.deepEqual(keystore.addKey('active/other', pubkey), {
