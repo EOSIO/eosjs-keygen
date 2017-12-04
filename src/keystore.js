@@ -16,19 +16,45 @@ const userStorage = require('./keypath-utils')('kstor')
 module.exports = Keystore
 
 /**
-  Provides private key management and storage.
+  Provides private key management and storage and tooling to limit exposure
+  of private keys as much as possible.
+
+  Although multiple root keys may be stored, this key store was designed with
+  the idea that all keys for a given `accountName` are derive from a single
+  root key (the master private key).
 
   This keystore does not query the blockchain or any external services.
   Removing keys here does not affect the blockchain.
 
-  @arg {string} accountName - Blockchain account name.
+  @arg {string} accountName - Blockchain account name that will act as the
+  container for a key and all derived child keys.
 
   @arg {object} [config]
-  @arg {number} [config.timeoutInMin = 30]
+
+  @arg {number} [config.timeoutInMin = 10] - upon timeout, remove keys
+  matching timeoutKeyPaths.
+
+  @arg {number} [config.timeoutKeyPaths = ['owner', 'owner/**']] - by default,
+  expire only owner and owner derived children.  If the default uriRules are
+  used this actually has nothing to delete.
+
   @arg {uriRules} [config.uriRules] - Specify which type of private key will
   be available on certain pages of the application.  Lock it down as much as
   possible and later re-prompt the user if a key is needed.  Default is to
-  allow all.
+  allow active (`active`) and all active derived keys (`active/**`) everywhere
+  (`.*`).
+
+  @example config = {
+  uriRules: {
+    'active': '.*',
+    'active/**': '.*'
+  },
+  timeoutInMin: 10,
+  timeoutKeyPaths: [
+    'owner',
+    'owner/**'
+  ]
+}
 */
 function Keystore(accountName, config = {}) {
   assert.equal(typeof accountName, 'string', 'accountName')
@@ -39,7 +65,11 @@ function Keystore(accountName, config = {}) {
       'active': '.*',
       'active/**': '.*'
     },
-    timeoutInMin: 30
+    timeoutInMin: 10,
+    timeoutKeyPaths: [
+      'owner',
+      'owner/**'
+    ]
   }
 
   config = Object.assign({}, configDefaults, config)
@@ -121,15 +151,15 @@ function Keystore(accountName, config = {}) {
 
     if(!expireInterval) {
       if(config.timeoutInMin != null) {
-        keepAlive()
         function tick() {
           if(timeUntilExpire() === 0) {
-            logout()
+            removeKeys(config.timeoutKeyPaths)
+            clearInterval(expireInterval)
+            expireInterval = null
           }
         }
-        // A small expireIntervalTime may be used for unit testing
-        const expireIntervalTime = Math.min(sec, config.timeoutInMin)
-        expireInterval = setInterval(tick, expireIntervalTime)
+
+        expireInterval = setInterval(tick, config.timeoutInMin * min)
       }
     }
 
@@ -540,8 +570,6 @@ function Keystore(accountName, config = {}) {
       validate.path(path)
     }
 
-    keepAlive()
-
     function clean(store, prefix) {
       for(const key in store) {
         if(key.indexOf(prefix) === 0) {
@@ -562,7 +590,7 @@ function Keystore(accountName, config = {}) {
   }
 
   /**
-    Removes any saved keys on disk and clears keys in memory.  Call only when
+    Removes all saved keys on disk and clears keys in memory.  Call only when
     the user chooses "logout."  Do not call when the application exits.
   */
   function logout() {
@@ -580,8 +608,10 @@ function Keystore(accountName, config = {}) {
     clearInterval(expireInterval)
     expireInterval = null
 
-    unlistenHistory()
-    unlistenHistory = null
+    if(unlistenHistory) {
+      unlistenHistory()
+      unlistenHistory = null
+    }
 
     expireAt = null
   }
@@ -590,10 +620,11 @@ function Keystore(accountName, config = {}) {
     @return {number} 0 (expired) or milliseconds until expire
   */
   function timeUntilExpire() {
-    return
+    return (
       expireAt === 0 ? 0 :
       expireAt == null ? 0 :
       Math.max(0, expireAt - Date.now())
+    )
   }
 
   /**

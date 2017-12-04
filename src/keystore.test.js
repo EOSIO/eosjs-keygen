@@ -21,12 +21,12 @@ config.history = {
 }
 
 let keystore
+
 function reset() {
   if(keystore) {
     keystore.logout()
-  } else {
-    Keystore.wipeAll()
   }
+  Keystore.wipeAll()
 }
 
 describe('Keystore', () => {
@@ -43,6 +43,22 @@ describe('Keystore', () => {
 
   it('create', () => {
     Keystore('uid')
+  })
+
+  it('initialize from disk', () => {
+    keystore = Keystore('myaccount')
+  
+    const privateKey = PrivateKey.randomKey(0)
+    const wif = privateKey.toWif()
+    const pubkey = privateKey.toPublic().toString()
+  
+    keystore.addKey('active/mypermission', wif, true/*disk*/)
+  
+    keystore = Keystore('myaccount')
+    assert.deepEqual(keystore.getKeyPaths(), {
+      pubkey: ['active/mypermission'],
+      wif: ['active/mypermission']
+    })
   })
 
   it('active key login (without comparing blockchain permission)', () => {
@@ -84,7 +100,7 @@ describe('Keystore', () => {
     })
   }
 
-  it('derive all account permisison keys', () => {
+  it('derive all active permisison keys', () => {
     const keystore = Keystore('uid')
     keystore.deriveKeys({parent: master, accountPermissions})
 
@@ -92,7 +108,7 @@ describe('Keystore', () => {
     assert.deepEqual(keystore.getKeyPaths(), {pubkey: keyPaths, wif: keyPaths})
   })
 
-  it('get derived public keys', () => {
+  it('get derived active public keys', () => {
     const keystore = Keystore('uid')
     keystore.deriveKeys({parent: master, accountPermissions})
 
@@ -100,6 +116,45 @@ describe('Keystore', () => {
       'EOS7vgT3ZsuUxWH1tWyqw6cyKqKhPjUFbonZjyrrXqDauty61SrYe',
       'EOS5MiUJEXxjJw6wUcE6yUjxpATaWetubAGUJ1nYLRSHYPpGCJ8ZU'
     ])
+  })
+
+  it('low permission page master login', () => {
+    const uriRules = {
+      'active/mypermission': '/'
+    }
+
+    keystore = Keystore('uid', {uriRules})
+    keystore.deriveKeys({parent: master, accountPermissions})
+
+    // Make sure "active" is not avabile, only active/mypermisison
+    const keyPaths = ['active/mypermission']
+    assert.deepEqual(
+      keystore.getKeyPaths(),
+      {pubkey: keyPaths, wif: keyPaths}
+    )
+  })
+
+  it('low permission page login', () => {
+    const uriRules = {
+      'active/mypermission': '/'
+    }
+
+    const mypermission =
+      PrivateKey(master.substring(2))
+      .getChildKey('owner')
+      .getChildKey('active')
+      .getChildKey('mypermission')
+
+    keystore = Keystore('uid', {uriRules})
+
+    // Active key is not required, just the lower mypermission key
+    keystore.deriveKeys({parent: mypermission, accountPermissions})
+
+    const keyPaths = ['active/mypermission']
+    assert.deepEqual(
+      keystore.getKeyPaths(),
+      {pubkey: keyPaths, wif: keyPaths}
+    )
   })
 
   it('uri rules history', () => {
@@ -133,40 +188,26 @@ describe('Keystore', () => {
     })
   })
 
-  it('low permission page master login', () => {
-    const uriRules = {
-      'active/mypermission': '/'
+  it('timeout', (done) => {
+    const config = {
+      uriRules: {'**': '.*'},
+      timeoutInMin: .001,
+      timeoutKeyPaths: ['owner', 'owner/**']
     }
 
-    keystore = Keystore('uid', {uriRules})
-    keystore.deriveKeys({parent: master})
+    keystore = Keystore('myaccount', config)
+    keystore.deriveKeys({parent: master, accountPermissions})
 
-    const keyPaths = ['active/mypermission']
-    assert.deepEqual(
-      keystore.getKeyPaths(),
-      {pubkey: keyPaths, wif: keyPaths}
-    )
-  })
+    const before = ['active', 'owner', 'active/mypermission']
+    assert.deepEqual(keystore.getKeyPaths(), {pubkey: before, wif: before})
 
-  it('low permission page login', () => {
-    const uriRules = {
-      'active/mypermission': '/'
+    function timeout() {
+      const after = ['active', 'active/mypermission']
+      assert.deepEqual(keystore.getKeyPaths(), {pubkey: after, wif: after})
+      done()
     }
 
-    const mypermission =
-      PrivateKey(master.substring(2))
-      .getChildKey('owner')
-      .getChildKey('active')
-      .getChildKey('mypermission')
-
-    keystore = Keystore('uid', {uriRules})
-    keystore.deriveKeys({parent: mypermission})
-
-    const keyPaths = ['active/mypermission']
-    assert.deepEqual(
-      keystore.getKeyPaths(),
-      {pubkey: keyPaths, wif: keyPaths}
-    )
+    setTimeout(() => {timeout()}, .002 * min)
   })
 
   it('deriveKey disk security', () => {
@@ -277,22 +318,6 @@ describe('Keystore', () => {
     assert.deepEqual(keystore.getKeyPaths(), {pubkey: [], wif: []})
   })
 
-  it('initialize from disk', () => {
-    keystore = Keystore('myaccount')
-
-    const privateKey = PrivateKey.randomKey(0)
-    const wif = privateKey.toWif()
-    const pubkey = privateKey.toPublic().toString()
-
-    keystore.addKey('active/mypermission', wif, true/*disk*/)
-
-    keystore = Keystore('myaccount')
-    assert.deepEqual(keystore.getKeyPaths(), {
-      pubkey: ['active/mypermission'],
-      wif: ['active/mypermission']
-    })
-  })
-
   it('wipe all', () => {
     keystore = Keystore('myaccount')
     keystore.addKey('active/mypermission', PrivateKey.randomKey(0), true/*disk*/)
@@ -303,7 +328,7 @@ describe('Keystore', () => {
     assert.deepEqual(keystore.getKeyPaths(), {pubkey: [], wif: []})
   })
 
-  it('wipe user', () => {
+  it('logout', () => {
     keystore = Keystore('myaccount')
 
     const privateKey = PrivateKey.randomKey(0)
@@ -325,5 +350,6 @@ describe('Keystore', () => {
       wif: []
     })
   })
-
 })
+
+const sec = 1000, min = 60 * sec

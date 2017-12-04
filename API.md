@@ -108,7 +108,12 @@ non-canonical path match.  Uri paths should be canonical.</li>
 <a name="module_Keystore..Keystore"></a>
 
 ### Keystore~Keystore(accountName, [config])
-Provides private key management and storage.
+Provides private key management and storage and tooling to limit exposure
+  of private keys as much as possible.
+
+  Although multiple root keys may be stored, this key store was designed with
+  the idea that all keys for a given `accountName` are derive from a single
+  root key (the master private key).
 
   This keystore does not query the blockchain or any external services.
   Removing keys here does not affect the blockchain.
@@ -117,11 +122,26 @@ Provides private key management and storage.
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| accountName | <code>string</code> |  | Blockchain account name. |
+| accountName | <code>string</code> |  | Blockchain account name that will act as the   container for a key and all derived child keys. |
 | [config] | <code>object</code> |  |  |
-| [config.timeoutInMin] | <code>number</code> | <code>30</code> |  |
-| [config.uriRules] | [<code>uriRules</code>](#uriRules) |  | Specify which type of private key will   be available on certain pages of the application.  Lock it down as much as   possible and later re-prompt the user if a key is needed.  Default is to   allow all. |
+| [config.timeoutInMin] | <code>number</code> | <code>10</code> | upon timeout, remove keys   matching timeoutKeyPaths. |
+| [config.timeoutKeyPaths] | <code>number</code> | <code>[&#x27;owner&#x27;, &#x27;owner/**&#x27;]</code> | by default,   expire only owner and owner derived children.  If the default uriRules are   used this actually has nothing to delete. |
+| [config.uriRules] | [<code>uriRules</code>](#uriRules) |  | Specify which type of private key will   be available on certain pages of the application.  Lock it down as much as   possible and later re-prompt the user if a key is needed.  Default is to   allow active (`active`) and all active derived keys (`active/**`) everywhere   (`.*`). |
 
+**Example**  
+```js
+config = {
+  uriRules: {
+    'active': '.*',
+    'active/**': '.*'
+  },
+  timeoutInMin: 10,
+  timeoutKeyPaths: [
+    'owner',
+    'owner/**'
+  ]
+}
+```
 
 * [~Keystore(accountName, [config])](#module_Keystore..Keystore)
     * _static_
@@ -146,9 +166,9 @@ Erase all traces of this keystore (for all users).
 <a name="module_Keystore..Keystore..deriveKeys"></a>
 
 #### Keystore~deriveKeys(params)
-Derives and saves private keys used to sign transactions.  This may be
-    called from a login dialog.  Keys may be removed as during Uri
-    navigation or when calling logout.
+Login or derive and save private keys.  This may be called from a login
+    action.  Keys may be removed as during Uri navigation or when calling
+    logout.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 **Throws**:
@@ -200,7 +220,7 @@ Fetch or derive a private key.
 <a name="module_Keystore..Keystore..logout"></a>
 
 #### Keystore~logout()
-Removes any saved keys on disk and clears keys in memory.  Call only when
+Removes all saved keys on disk and clears keys in memory.  Call only when
     the user chooses "logout."  Do not call when the application exits.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
@@ -208,7 +228,7 @@ Removes any saved keys on disk and clears keys in memory.  Call only when
 
 #### Keystore~timeUntilExpire() ⇒ <code>number</code>
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
-**Returns**: <code>number</code> - 0 (expired), null, or milliseconds until expire  
+**Returns**: <code>number</code> - 0 (expired) or milliseconds until expire  
 <a name="module_Keystore..Keystore..keepAlive"></a>
 
 #### Keystore~keepAlive()
