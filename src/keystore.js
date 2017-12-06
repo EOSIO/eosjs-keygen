@@ -506,6 +506,7 @@ function Keystore(accountName, config = {}) {
         if(wif != null) {
           key.wif = deny ? null : wif
         }
+        return false // done
       })
     }
 

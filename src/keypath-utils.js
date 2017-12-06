@@ -70,7 +70,7 @@ function Storage(namespace) {
     @arg {Array<string>} keyPrefix - index, if partial path, the rest of the
     key elements end up in keySuffix.
 
-    @arg {function} callback(keySuffix = [], value) 
+    @arg {function} callback(keySuffix = [], value) return false to stop looping
   */
   function query(state, keyPrefix, callback) {
     assert.equal(typeof state, 'object', 'state')
@@ -83,7 +83,10 @@ function Storage(namespace) {
         continue
       }
       const decodedKeys = JSON.parse('[' + Buffer.from(key, 'hex') + ']')
-      callback(decodedKeys.slice(keyPrefix.length + 1), deNull(state[key]))
+      const ret = callback(decodedKeys.slice(keyPrefix.length + 1), deNull(state[key]))
+      if(ret === false) {
+        break
+      }
     }
   }
 
