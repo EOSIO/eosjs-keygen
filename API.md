@@ -97,8 +97,8 @@ non-canonical path match.  Uri paths should be canonical.</li>
         * _inner_
             * [~deriveKeys(params)](#module_Keystore..Keystore..deriveKeys)
             * [~getKeyPaths()](#module_Keystore..Keystore..getKeyPaths) ⇒ <code>object</code>
+            * [~getPublicKey(path)](#module_Keystore..Keystore..getPublicKey) ⇒ [<code>pubkey</code>](#pubkey)
             * [~getPublicKeys([keyPathMatcher])](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
-            * [~getPublicKey()](#module_Keystore..Keystore..getPublicKey) ⇒ [<code>pubkey</code>](#pubkey)
             * [~getPrivateKey()](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
             * [~logout()](#module_Keystore..Keystore..logout)
             * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
@@ -149,8 +149,8 @@ config = {
     * _inner_
         * [~deriveKeys(params)](#module_Keystore..Keystore..deriveKeys)
         * [~getKeyPaths()](#module_Keystore..Keystore..getKeyPaths) ⇒ <code>object</code>
+        * [~getPublicKey(path)](#module_Keystore..Keystore..getPublicKey) ⇒ [<code>pubkey</code>](#pubkey)
         * [~getPublicKeys([keyPathMatcher])](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
-        * [~getPublicKey()](#module_Keystore..Keystore..getPublicKey) ⇒ [<code>pubkey</code>](#pubkey)
         * [~getPrivateKey()](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
         * [~logout()](#module_Keystore..Keystore..logout)
         * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
@@ -191,32 +191,37 @@ Return paths for all available keys.  Empty array is used if there are
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 **Returns**: <code>object</code> - {pubkey: Array<pubkey>, wif: Array<wif>}  
-<a name="module_Keystore..Keystore..getPublicKeys"></a>
-
-#### Keystore~getPublicKeys([keyPathMatcher]) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
-Return public keys for a path matcher (all keys by default).
-
-**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
-**Returns**: [<code>Array.&lt;pubkey&gt;</code>](#pubkey) - public keys or empty array  
-
-| Param | Type | Default |
-| --- | --- | --- |
-| [keyPathMatcher] | [<code>keyPathMatcher</code>](#keyPathMatcher) | <code>&#x27;**&#x27;</code> | 
-
 <a name="module_Keystore..Keystore..getPublicKey"></a>
 
-#### Keystore~getPublicKey() ⇒ [<code>pubkey</code>](#pubkey)
+#### Keystore~getPublicKey(path) ⇒ [<code>pubkey</code>](#pubkey)
 Fetch or derive a public key.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 **Returns**: [<code>pubkey</code>](#pubkey) - or null  
+
+| Param | Type |
+| --- | --- |
+| path | [<code>keyPath</code>](#keyPath) | 
+
+<a name="module_Keystore..Keystore..getPublicKeys"></a>
+
+#### Keystore~getPublicKeys([keyPathMatcher]) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
+Return public keys for a path or path matcher.
+
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**Returns**: [<code>Array.&lt;pubkey&gt;</code>](#pubkey) - public keys or empty array  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [keyPathMatcher] | [<code>keyPath</code>](#keyPath) \| [<code>keyPathMatcher</code>](#keyPathMatcher) | <code>&#x27;**&#x27;</code> | return all keys |
+
 <a name="module_Keystore..Keystore..getPrivateKey"></a>
 
 #### Keystore~getPrivateKey() ⇒ [<code>wif</code>](#wif)
 Fetch or derive a private key.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
-**Returns**: [<code>wif</code>](#wif) - or null (denied for location) or undefined (not available)  
+**Returns**: [<code>wif</code>](#wif) - or null (missing or not available for location)  
 <a name="module_Keystore..Keystore..logout"></a>
 
 #### Keystore~logout()

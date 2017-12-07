@@ -332,7 +332,7 @@ function Keystore(accountName, config = {}) {
   }
 
   /**
-    @private see keystore.deriveKeys
+    @private see: keystore.deriveKeys
 
     Save a private or public key to the store in either RAM only or RAM and
     disk.  Typically deriveKeys is used instead.
@@ -415,18 +415,40 @@ function Keystore(accountName, config = {}) {
   }
 
   /**
-    Return public keys for a path matcher (all keys by default).
+    Fetch or derive a public key.
 
-    @arg {keyPathMatcher} [keyPathMatcher = '**']
+    @arg {keyPath}
+    @return {pubkey} or null
+  */
+  function getPublicKey(path) {
+    validate.path(path)
+    const [key] = getKeys(path)
+    return key ? key.pubkey : null
+  }
+
+  /**
+    Return public keys for a path or path matcher.
+
+    @arg {keyPath|keyPathMatcher} [keyPathMatcher = '**'] return all keys
     @return {Array<pubkey>} public keys or empty array
   */
   function getPublicKeys(keyPathMatcher = '**') {
     return getKeys(keyPathMatcher).map(key => key.pubkey)
   }
 
+  /**
+    Fetch or derive a private key.
+
+    @return {wif} or null (missing or not available for location)
+  */
+  function getPrivateKey(path) {
+    validate.path(path)
+    const [key] = getKeys(path)
+    return key ? key.wif : undefined
+  }
+
   // /**
-  //   @private
-  //   Return private keys for a path matcher.
+  //   @private Return private keys for a path matcher.
   //   @arg {keyPathMatcher}
   //   @return {Array<wif>} wifs or empty array
   // */
@@ -437,104 +459,71 @@ function Keystore(accountName, config = {}) {
   // }
 
   /**
-    @private
-    @arg {keyPathMatcher} [keyPathMatcher] or null to match all
-    @return {Array<keyPathPrivate>} [{path, pubkey, wif}]
+    @private Fetch or derive a key pair.
+
+    @arg {keyPath|keyPathMatcher} keyPathMatcher
+
+    @return {Array<keyPathPrivate>} {path, pubkey, deny, wif} or empty array.
+    Based on the Uri rules and current location, the deny could be set to true
+    and the wif will be null.
   */
-  function getKeys(keyPathMatcher) {
+  function getKeys(keyPathMatcher = '**') {
     keepAlive()
 
     const keys = new Map()
 
+    // if we try to derive it below
+    const wifsByPath = {}
+
+    let isPath
+    try {
+      validate.path(keyPathMatcher)
+      isPath = true
+    } catch(e) {
+      isPath = false
+    }
+
     function query(store) {
       userStorage.query(store, [accountName, 'kpath'], ([path, pubkey], wif) => {
-        if(keyPathMatcher == null || minimatch(path, keyPathMatcher)) {
+        wifsByPath[path] = wif
+        if(minimatch(path, keyPathMatcher)) {
           const result = {path, pubkey}
-          if(wif != null) {
-            const deny = uriRules.deny(currentUriPath(), path).length !== 0
-            result.wif = deny ? null : wif
-          }
+          result.deny = uriRules.deny(currentUriPath(), path).length !== 0
+          result.wif = result.deny ? null : wif
           keys.set(path, result)
+          if(isPath) {
+            return false // break
+          }
         }
       })
     }
 
     query(state)
+    if(isPath && keys.size) {
+      // A path can match only one, found so no need to query localStorage
+      return Array.from(keys.values())
+    }
+
     query(localStorage)
+    if(!isPath) {
+      // keyPathMatcher can not derive keys
+      // .. the search is complete (found or not)
+      return Array.from(keys.values())
+    }
 
-    return Array.from(keys.values())
-  }
-
-  /**
-    Fetch or derive a public key.
-    @return {pubkey} or null
-  */
-  function getPublicKey(path) {
-    const key = getKey(path)
-    return key ? key.pubkey : null
-  }
-
-  /**
-    Fetch or derive a private key.
-    @return {wif} or null (denied for location) or undefined (not available)
-  */
-  function getPrivateKey(path) {
-    const key = getKey(path)
-    return key ? key.wif : undefined
-  }
-
-  /**
-    @private
-    Fetch or derive a key pair.
-
-    @arg {keyPath} path
-
-    @return {Object} {pubkey, wif, deny} or null.  Based on the Uri rules, the
-    deny could be set to true and the wif could be nullified.  If wif is
-    property is not returned, the wif is not available at all.  
-  */
-  function getKey(path) {
-    keepAlive()
+    assert(isPath, 'keyPathMatcher should be a path at this point')
 
     let key = null
 
-    const deny = uriRules.deny(currentUriPath(), path).length !== 0
-
-    function query(store) {
-      userStorage.query(store, [accountName, 'kpath', path], ([pubkey], wif) => {
-        key = {pubkey, deny}
-        if(wif != null) {
-          key.wif = deny ? null : wif
-        }
-        return false // done
-      })
-    }
-
-    query(state)
-    if(key) {
-      return key
-    }
-
-    query(localStorage)
-    if(key) {
-      return key
-    }
-
-    // try to derive it
-    const wifsByPath = {}
-
-    // Gather up all known keys
-    getKeys().filter(k => !!k.wif).forEach(k => {
-      // getKeys => {path, pubkey, wif}
-      wifsByPath[k.path] = k.wif
-    })
-
-    // derive children
+    // derive children (path)
+    const path = keyPathMatcher
     const deriveKeys = Keygen.deriveKeys(path, wifsByPath)
     if(deriveKeys.length) {
       for(const derivedKey of deriveKeys) { // {path, privateKey}
         if(derivedKey.path === path) {// filter intermediate children
+          const deny = uriRules.deny(currentUriPath(), path).length !== 0
           key = {
+            path,
             pubkey: derivedKey.privateKey.toPublic().toString(),
             wif: deny ? null : derivedKey.privateKey.toWif(),
             deny
@@ -544,14 +533,12 @@ function Keystore(accountName, config = {}) {
       }
     }
 
-    return key
+    return key ? [key] : []
   }
 
   /**
-    @private
-
-    Remove a key or keys from this key store (ram and disk).  Typically logout
-    is used instead.
+    @private Remove a key or keys from this key store (ram and disk).  Typically
+    logout is used instead.
 
     @arg {keyPathMatcher|Array<keyPathMatcher>|Set<keyPathMatcher>}
 
@@ -563,6 +550,7 @@ function Keystore(accountName, config = {}) {
     are cached before enabling this feature.
   */
   function removeKeys(paths, keepPublicKeys = false) {
+    assert(paths != null, 'paths')
     if(typeof paths === 'string') {
       paths = [paths]
     }
@@ -649,8 +637,8 @@ function Keystore(accountName, config = {}) {
     deriveKeys,
     addKey,
     getKeyPaths,
-    getPublicKeys,
     getPublicKey,
+    getPublicKeys,
     getPrivateKey,
     removeKeys,
     logout,
