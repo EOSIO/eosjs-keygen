@@ -2,6 +2,7 @@
 const assert = require('assert')
 const {accountPermissions, checkKeySet} = require('./test-utils.js')
 const {PrivateKey} = require('eosjs-ecc')
+const ecc = require('eosjs-ecc')
 const config = require('./config')
 
 const Keystore = require('./keystore.js')
@@ -183,7 +184,7 @@ describe('Keystore', () => {
     pathname = '/transfers'
     historyListener() // trigger history change event
     assert.deepEqual(keystore.getKeyPaths(), {
-      pubkey: ['active', 'active/mypermission'],
+      pubkey: ['active', 'owner', 'active/mypermission'],
       wif: ['active', 'active/mypermission']
     })
   })
@@ -203,7 +204,7 @@ describe('Keystore', () => {
 
     function timeout() {
       const after = ['active', 'active/mypermission']
-      assert.deepEqual(keystore.getKeyPaths(), {pubkey: after, wif: after})
+      assert.deepEqual(keystore.getKeyPaths(), {pubkey: before, wif: after})
       done()
     }
 
@@ -316,6 +317,27 @@ describe('Keystore', () => {
 
     keystore.removeKeys(new Set(['active']), false/*keepPublicKeys*/)
     assert.deepEqual(keystore.getKeyPaths(), {pubkey: [], wif: []})
+  })
+
+  it('keyProvider', () => {
+    keystore = Keystore('myaccount')
+    keystore.deriveKeys({parent: master})
+
+    const pubkeys = keystore.keyProvider({publicKeyPathMatcher: 'active'})
+
+    assert.equal(pubkeys.length, 1, 'pubkeys.length')
+
+    const wifs = keystore.keyProvider({pubkeys})
+    assert.equal(wifs.length, 1, 'pubkeys.length')
+    assert.equal(ecc.privateToPublic(wifs[0]), pubkeys[0])
+
+    keystore.removeKeys('active')
+    assert.throws(() => {keystore.keyProvider({pubkeys})}, 
+      /login with your 'active' key/)
+
+    keystore.removeKeys('active', false /* keepPublicKeys */)
+    assert.throws(() => {keystore.keyProvider({pubkeys})}, 
+      /missing public key EOS.*/)
   })
 
   it('wipe all', () => {

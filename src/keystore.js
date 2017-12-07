@@ -44,6 +44,12 @@ module.exports = Keystore
   allow active (`active`) and all active derived keys (`active/**`) everywhere
   (`.*`).
 
+  @arg {boolean} [keepPublicKeys = true] - Enable for better UX; show users keys they
+  have access too without requiring them to login. Logging in brings a
+  private key online which is not necessary to see public information.
+
+  The UX should implement this behavior in a way that is clear public keys
+  are cached before enabling this feature.
   @example config = {
   uriRules: {
     'active': '.*',
@@ -53,7 +59,8 @@ module.exports = Keystore
   timeoutKeyPaths: [
     'owner',
     'owner/**'
-  ]
+  ],
+  keepPublicKeys: true
 }
 */
 function Keystore(accountName, config = {}) {
@@ -69,7 +76,8 @@ function Keystore(accountName, config = {}) {
     timeoutKeyPaths: [
       'owner',
       'owner/**'
-    ]
+    ],
+    keepPublicKeys: true
   }
 
   config = Object.assign({}, configDefaults, config)
@@ -145,7 +153,7 @@ function Keystore(accountName, config = {}) {
         // Prevent certain private keys from being available to high-risk pages.
         const paths = getKeyPaths().wif
         const pathsToPurge = uriRules.check(currentUriPath(), paths).deny
-        removeKeys(pathsToPurge/*, keepPublicKeys*/)
+        removeKeys(pathsToPurge)
       })
     }
 
@@ -253,10 +261,10 @@ function Keystore(accountName, config = {}) {
         const update = addKey(path, privateKey, disk)
         if(update) {
           allow = true
-          if(update.dirty) { // ram or disk changed
-            // remove so these will be re-derived 
+          if(update.dirty) { // blockchain key changed
+            // remove so these will be re-derived
             const children = getKeys(`${path}/**`).map(k => k.path)
-            removeKeys(children)
+            removeKeys(children, false/*keepPublicKeys*/)
           }
         }
       }
@@ -447,19 +455,53 @@ function Keystore(accountName, config = {}) {
     return key ? key.wif : undefined
   }
 
-  // /**
-  //   @private Return private keys for a path matcher.
-  //   @arg {keyPathMatcher}
-  //   @return {Array<wif>} wifs or empty array
-  // */
-  // function getPrivateKeys(keyPathMatcher) {
-  //   return getKeys(keyPathMatcher)
-  //   .filter(key => key.wif != null)
-  //   .map(key => key.wif)
-  // }
+  /**
+    Return private keys for a path matcher or for a list of public keys.  If a
+    list of public keys is provided they will be validated ensuring they all
+    have private keys to return.
+
+    @arg {keyPathMatcher} keyPathMatcher
+    @arg {Array<pubkey>} pubkeys
+
+    @throws Error `login with your ${key.pubkey} key`
+    @throws Error `missing public key ${key}`
+
+    @return {Array<wif>} wifs or empty array
+  */
+  function getPrivateKeys(keyPathMatcher = '**', pubkeys) {
+    if(pubkeys) {
+      if(pubkeys instanceof Array) {
+        pubkeys = new Set(pubkeys)
+      }
+
+      assert(pubkeys instanceof Set, 'pubkeys should be a Set or Array')
+
+      const keys = new Map()
+
+      getKeys(keyPathMatcher).filter(key => pubkeys.has(key.pubkey)).forEach(key => {
+        if(key.wif == null) {
+          throw new Error(`login with your '${key.path}' key`)
+        }
+        keys.set(key.pubkey, key.wif)
+      })
+
+      pubkeys.forEach(key => {
+        if(!keys.has(key)) {
+          // Was keepPublicKeys true?
+          throw new Error(`missing public key ${key}`)
+        }
+      })
+
+      return Array.from(keys.values())
+    }
+
+    return getKeys(keyPathMatcher)
+      .filter(key => key.wif != null)
+      .map(key => key.wif)
+  }
 
   /**
-    @private Fetch or derive a key pair.
+    Fetch or derive a key pairs.
 
     @arg {keyPath|keyPathMatcher} keyPathMatcher
 
@@ -536,14 +578,9 @@ function Keystore(accountName, config = {}) {
 
     @arg {keyPathMatcher|Array<keyPathMatcher>|Set<keyPathMatcher>}
 
-    @arg {boolean} keepPublicKeys - Enable for better UX; show users keys they
-    have access too without requiring them to login. Logging in brings a
-    private key online which is not necessary to see public information.
-
-    The UX should implement this behavior in a way that is clear public keys
-    are cached before enabling this feature.
+    @arg {boolean} keepPublicKeys
   */
-  function removeKeys(paths, keepPublicKeys = false) {
+  function removeKeys(paths, keepPublicKeys = config.keepPublicKeys) {
     assert(paths != null, 'paths')
     if(typeof paths === 'string') {
       paths = [paths]
@@ -618,22 +655,54 @@ function Keystore(accountName, config = {}) {
     expireAt = Date.now() + config.timeoutInMin * min
   }
 
-  /** @see https://github.com/eosio/eosjs */
-  function keyProvider(/*{transaction}*/) {
+  /**
+    Integration for 'eosjs' ..
+
+    Call keyProvider with no parameters or with a specific keyPathMatcher
+    pattern to get an array of public keys in this key store.  A library
+    like eosjs may be provided these available public keys to eosd
+    get_required_keys for filtering and to determine which private keys are
+    needed to sign a given transaction.
+
+    Call again with the get_required_keys pubkeys array to get the required
+    private keys returned (or an error if any are missing).
+
+    @throws Error `login with your ${path} key`
+    @throws Error `missing public key ${key}`
+
+    @arg {object} param
+    @arg {string} [param.keyPathMatcher = '**'] - param.keyPathMatcher for public keys
+    @arg {Array<pubkey>|Set<pubkey>} [param.pubkeys] for fetching private keys
+
+    @return {Array<pubkey|wif>} available pubkeys in the keystore or matching
+    wif private keys for the provided pubkeys argument (also filtered using
+    keyPathMatcher).
+
+    @see https://github.com/eosio/eosjs
+  */
+  function keyProvider({keyPathMatcher = '**', pubkeys} = {}) {
     keepAlive()
 
-    return getKeyPaths().wif.map(path =>
-      getPrivateKey(path)
-    )
+    if(pubkeys) {
+      return getPrivateKeys(keyPathMatcher, pubkeys)
+    }
+
+    if(keyPathMatcher) {
+      // For `login with your xxx key` below, get all keys even if a
+      // wif is not available.
+      return getPublicKeys(keyPathMatcher)
+    }
   }
 
   return {
     deriveKeys,
     addKey,
+    getKeys,
     getKeyPaths,
     getPublicKey,
     getPublicKeys,
     getPrivateKey,
+    getPrivateKeys,
     removeKeys,
     logout,
     timeUntilExpire,
@@ -647,7 +716,6 @@ function currentUriPath() {
   const {location} = globalConfig.history
   return `${location.pathname}${location.search}${location.hash}`
 }
-
 
 /** Erase all traces of this keystore (for all users). */
 Keystore.wipeAll = function() {

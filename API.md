@@ -91,7 +91,7 @@ non-canonical path match.  Uri paths should be canonical.</li>
 ## Keystore
 
 * [Keystore](#module_Keystore)
-    * [~Keystore(accountName, [config])](#module_Keystore..Keystore)
+    * [~Keystore(accountName, [config], [keepPublicKeys])](#module_Keystore..Keystore)
         * _static_
             * [.wipeAll()](#module_Keystore..Keystore.wipeAll)
         * _inner_
@@ -99,15 +99,17 @@ non-canonical path match.  Uri paths should be canonical.</li>
             * [~getKeyPaths()](#module_Keystore..Keystore..getKeyPaths) ⇒ <code>object</code>
             * [~getPublicKey(path)](#module_Keystore..Keystore..getPublicKey) ⇒ [<code>pubkey</code>](#pubkey)
             * [~getPublicKeys([keyPathMatcher])](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
-            * [~getPrivateKey()](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
+            * [~getPrivateKey(path)](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
+            * [~getPrivateKeys(keyPathMatcher, pubkeys)](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
+            * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
             * [~logout()](#module_Keystore..Keystore..logout)
             * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
             * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
-            * [~keyProvider()](#module_Keystore..Keystore..keyProvider)
+            * [~keyProvider(param)](#module_Keystore..Keystore..keyProvider) ⇒ <code>Array.&lt;(pubkey\|wif)&gt;</code>
 
 <a name="module_Keystore..Keystore"></a>
 
-### Keystore~Keystore(accountName, [config])
+### Keystore~Keystore(accountName, [config], [keepPublicKeys])
 Provides private key management and storage and tooling to limit exposure
   of private keys as much as possible.
 
@@ -127,6 +129,7 @@ Provides private key management and storage and tooling to limit exposure
 | [config.timeoutInMin] | <code>number</code> | <code>10</code> | upon timeout, remove keys   matching timeoutKeyPaths. |
 | [config.timeoutKeyPaths] | <code>number</code> | <code>[&#x27;owner&#x27;, &#x27;owner/**&#x27;]</code> | by default,   expire only owner and owner derived children.  If the default uriRules are   used this actually has nothing to delete. |
 | [config.uriRules] | [<code>uriRules</code>](#uriRules) |  | Specify which type of private key will   be available on certain pages of the application.  Lock it down as much as   possible and later re-prompt the user if a key is needed.  Default is to   allow active (`active`) and all active derived keys (`active/**`) everywhere   (`.*`). |
+| [keepPublicKeys] | <code>boolean</code> | <code>true</code> | Enable for better UX; show users keys they   have access too without requiring them to login. Logging in brings a   private key online which is not necessary to see public information.   The UX should implement this behavior in a way that is clear public keys   are cached before enabling this feature. |
 
 **Example**  
 ```js
@@ -139,11 +142,12 @@ config = {
   timeoutKeyPaths: [
     'owner',
     'owner/**'
-  ]
+  ],
+  keepPublicKeys: true
 }
 ```
 
-* [~Keystore(accountName, [config])](#module_Keystore..Keystore)
+* [~Keystore(accountName, [config], [keepPublicKeys])](#module_Keystore..Keystore)
     * _static_
         * [.wipeAll()](#module_Keystore..Keystore.wipeAll)
     * _inner_
@@ -151,11 +155,13 @@ config = {
         * [~getKeyPaths()](#module_Keystore..Keystore..getKeyPaths) ⇒ <code>object</code>
         * [~getPublicKey(path)](#module_Keystore..Keystore..getPublicKey) ⇒ [<code>pubkey</code>](#pubkey)
         * [~getPublicKeys([keyPathMatcher])](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
-        * [~getPrivateKey()](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
+        * [~getPrivateKey(path)](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
+        * [~getPrivateKeys(keyPathMatcher, pubkeys)](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
+        * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
         * [~logout()](#module_Keystore..Keystore..logout)
         * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
         * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
-        * [~keyProvider()](#module_Keystore..Keystore..keyProvider)
+        * [~keyProvider(param)](#module_Keystore..Keystore..keyProvider) ⇒ <code>Array.&lt;(pubkey\|wif)&gt;</code>
 
 <a name="module_Keystore..Keystore.wipeAll"></a>
 
@@ -217,11 +223,50 @@ Return public keys for a path or path matcher.
 
 <a name="module_Keystore..Keystore..getPrivateKey"></a>
 
-#### Keystore~getPrivateKey() ⇒ [<code>wif</code>](#wif)
+#### Keystore~getPrivateKey(path) ⇒ [<code>wif</code>](#wif)
 Fetch or derive a private key.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 **Returns**: [<code>wif</code>](#wif) - or null (missing or not available for location)  
+
+| Param | Type |
+| --- | --- |
+| path | [<code>keyPath</code>](#keyPath) | 
+
+<a name="module_Keystore..Keystore..getPrivateKeys"></a>
+
+#### Keystore~getPrivateKeys(keyPathMatcher, pubkeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
+Return private keys for a path matcher or for a list of public keys.  If a
+    list of public keys is provided they will be validated ensuring they all
+    have private keys to return.
+
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**Returns**: [<code>Array.&lt;wif&gt;</code>](#wif) - wifs or empty array  
+**Throws**:
+
+- <code>key.pubkey</code> Error `login with your $ key`
+- <code>key</code> Error `missing public key $`
+
+
+| Param | Type | Default |
+| --- | --- | --- |
+| keyPathMatcher | [<code>keyPathMatcher</code>](#keyPathMatcher) | <code>**</code> | 
+| pubkeys | [<code>Array.&lt;pubkey&gt;</code>](#pubkey) |  | 
+
+<a name="module_Keystore..Keystore..getKeys"></a>
+
+#### Keystore~getKeys(keyPathMatcher) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
+Fetch or derive a key pairs.
+
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**Returns**: [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate) - {path, pubkey, deny, wif} or empty array.
+    Based on the Uri rules and current location, the deny could be set to true
+    and the wif will be null.  
+
+| Param | Type | Default |
+| --- | --- | --- |
+| keyPathMatcher | [<code>keyPath</code>](#keyPath) \| [<code>keyPathMatcher</code>](#keyPathMatcher) | <code>**</code> | 
+
 <a name="module_Keystore..Keystore..logout"></a>
 
 #### Keystore~logout()
@@ -243,9 +288,35 @@ Keep alive (prevent expiration).  Called automatically if Uri navigation
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 <a name="module_Keystore..Keystore..keyProvider"></a>
 
-#### Keystore~keyProvider()
+#### Keystore~keyProvider(param) ⇒ <code>Array.&lt;(pubkey\|wif)&gt;</code>
+Integration for 'eosjs' ..
+
+    Call keyProvider with no parameters or with a specific keyPathMatcher
+    pattern to get an array of public keys in this key store.  A library
+    like eosjs may be provided these available public keys to eosd
+    get_required_keys for filtering and to determine which private keys are
+    needed to sign a given transaction.
+
+    Call again with the get_required_keys pubkeys array to get the required
+    private keys returned (or an error if any are missing).
+
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+**Returns**: <code>Array.&lt;(pubkey\|wif)&gt;</code> - available pubkeys in the keystore or matching
+    wif private keys for the provided pubkeys argument (also filtered using
+    keyPathMatcher).  
+**Throws**:
+
+- <code>path</code> Error `login with your $ key`
+- <code>key</code> Error `missing public key $`
+
 **See**: https://github.com/eosio/eosjs  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| param | <code>object</code> |  |  |
+| [param.keyPathMatcher] | <code>string</code> | <code>&quot;&#x27;**&#x27;&quot;</code> | param.keyPathMatcher for public keys |
+| [param.pubkeys] | [<code>Array.&lt;pubkey&gt;</code>](#pubkey) \| [<code>Set.&lt;pubkey&gt;</code>](#pubkey) |  | for fetching private keys |
+
 <a name="module_Keygen"></a>
 
 ## Keygen
@@ -438,7 +509,11 @@ An expanded version of a private key, a keypath ('active/mypermission'),
 Glob matching expressions (`active`, `active/**`, `owner/*`).
 
 **Kind**: global typedef  
-**See**: https://www.npmjs.com/package/minimatch  
+**See**
+
+- https://www.npmjs.com/package/glob#glob-primer - syntax
+- https://www.npmjs.com/package/minimatch - implementation
+
 <a name="keyPathMatcher"></a>
 
 ## keyPathMatcher : [<code>minimatch</code>](#minimatch)

@@ -127,7 +127,10 @@
 
 /**
   Glob matching expressions (`active`, `active/**`, `owner/*`).
-  @see https://www.npmjs.com/package/minimatch
+
+  @see https://www.npmjs.com/package/glob#glob-primer - syntax
+  @see https://www.npmjs.com/package/minimatch - implementation
+
   @typedef {string} minimatch
 */
 
