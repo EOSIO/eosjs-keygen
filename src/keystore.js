@@ -438,7 +438,7 @@ function Keystore(accountName, config = {}) {
 
   /**
     Fetch or derive a private key.
-
+    @arg {keyPath} path
     @return {wif} or null (missing or not available for location)
   */
   function getPrivateKey(path) {
@@ -475,13 +475,7 @@ function Keystore(accountName, config = {}) {
     // if we try to derive it below
     const wifsByPath = {}
 
-    let isPath
-    try {
-      validate.path(keyPathMatcher)
-      isPath = true
-    } catch(e) {
-      isPath = false
-    }
+    const isPath = validate.isPath(keyPathMatcher)
 
     function query(store) {
       userStorage.query(store, [accountName, 'kpath'], ([path, pubkey], wif) => {

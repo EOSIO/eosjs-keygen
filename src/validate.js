@@ -5,6 +5,7 @@ const {PrivateKey, PublicKey} = require('eosjs-ecc')
 module.exports = {
   keyType,
   path,
+  isPath,
   isMasterKey
 }
 
@@ -18,6 +19,15 @@ function keyType(key) {
     PrivateKey.isValid(key) ? 'privateKey' :
     PublicKey.isValid(key) ? 'pubkey' :
     null
+}
+
+function isPath(txt) {
+  try {
+    path(txt)
+    return true
+  } catch(e) {
+    return false
+  }
 }
 
 /**
