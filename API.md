@@ -100,8 +100,9 @@ non-canonical path match.  Uri paths should be canonical.</li>
             * [~getPublicKey(path)](#module_Keystore..Keystore..getPublicKey) ⇒ [<code>pubkey</code>](#pubkey)
             * [~getPublicKeys([keyPathMatcher])](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
             * [~getPrivateKey(path)](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
-            * [~getPrivateKeys(keyPathMatcher, pubkeys)](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
+            * [~getPrivateKeys([keyPathMatcher], [pubkeys])](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
             * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
+            * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret)
             * [~logout()](#module_Keystore..Keystore..logout)
             * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
             * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
@@ -156,8 +157,9 @@ config = {
         * [~getPublicKey(path)](#module_Keystore..Keystore..getPublicKey) ⇒ [<code>pubkey</code>](#pubkey)
         * [~getPublicKeys([keyPathMatcher])](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
         * [~getPrivateKey(path)](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
-        * [~getPrivateKeys(keyPathMatcher, pubkeys)](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
+        * [~getPrivateKeys([keyPathMatcher], [pubkeys])](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
         * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
+        * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret)
         * [~logout()](#module_Keystore..Keystore..logout)
         * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
         * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
@@ -235,7 +237,7 @@ Fetch or derive a private key.
 
 <a name="module_Keystore..Keystore..getPrivateKeys"></a>
 
-#### Keystore~getPrivateKeys(keyPathMatcher, pubkeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
+#### Keystore~getPrivateKeys([keyPathMatcher], [pubkeys]) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
 Return private keys for a path matcher or for a list of public keys.  If a
     list of public keys is provided they will be validated ensuring they all
     have private keys to return.
@@ -248,10 +250,10 @@ Return private keys for a path matcher or for a list of public keys.  If a
 - <code>key</code> Error `missing public key $`
 
 
-| Param | Type | Default |
-| --- | --- | --- |
-| keyPathMatcher | [<code>keyPathMatcher</code>](#keyPathMatcher) | <code>**</code> | 
-| pubkeys | [<code>Array.&lt;pubkey&gt;</code>](#pubkey) |  | 
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [keyPathMatcher] | [<code>keyPathMatcher</code>](#keyPathMatcher) | <code>&#x27;**&#x27;</code> | default is to match all |
+| [pubkeys] | [<code>Array.&lt;pubkey&gt;</code>](#pubkey) | <code></code> | if specified, filter and require all |
 
 <a name="module_Keystore..Keystore..getKeys"></a>
 
@@ -266,6 +268,16 @@ Fetch or derive a key pairs.
 | Param | Type | Default |
 | --- | --- | --- |
 | keyPathMatcher | [<code>keyPath</code>](#keyPath) \| [<code>keyPathMatcher</code>](#keyPathMatcher) | <code>**</code> | 
+
+<a name="module_Keystore..Keystore..signSharedSecret"></a>
+
+#### Keystore~signSharedSecret(otherPubkey, keyPathMatcher)
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+
+| Param | Type | Default |
+| --- | --- | --- |
+| otherPubkey | [<code>pubkey</code>](#pubkey) |  | 
+| keyPathMatcher | [<code>keyPathMatcher</code>](#keyPathMatcher) | <code>**</code> | 
 
 <a name="module_Keystore..Keystore..logout"></a>
 
