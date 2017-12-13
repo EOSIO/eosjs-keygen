@@ -41,7 +41,7 @@
     "mocha": "^3.4.2"
   },
   "dependencies": {
-    "eosjs-ecc": "^1.6.1",
+    "eosjs-ecc": "^1.6.3",
     "history": "^4.7.2",
     "localStorage": "^1.0.3",
     "minimatch": "^3.0.4"

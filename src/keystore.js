@@ -1,7 +1,7 @@
 /** @module Keystore */
 
 const assert = require('assert')
-const {PrivateKey} = require('eosjs-ecc')
+const {PrivateKey, Signature} = require('eosjs-ecc')
 const ecc = require('eosjs-ecc')
 const minimatch = require('minimatch')
 
@@ -460,8 +460,8 @@ function Keystore(accountName, config = {}) {
     list of public keys is provided they will be validated ensuring they all
     have private keys to return.
 
-    @arg {keyPathMatcher} keyPathMatcher
-    @arg {Array<pubkey>} pubkeys
+    @arg {keyPathMatcher} [keyPathMatcher = '**'] default is to match all
+    @arg {Array<pubkey>} [pubkeys = null] if specified, filter and require all 
 
     @throws Error `login with your ${key.pubkey} key`
     @throws Error `missing public key ${key}`
@@ -469,35 +469,35 @@ function Keystore(accountName, config = {}) {
     @return {Array<wif>} wifs or empty array
   */
   function getPrivateKeys(keyPathMatcher = '**', pubkeys) {
-    if(pubkeys) {
-      if(pubkeys instanceof Array) {
-        pubkeys = new Set(pubkeys)
-      }
-
-      assert(pubkeys instanceof Set, 'pubkeys should be a Set or Array')
-
-      const keys = new Map()
-
-      getKeys(keyPathMatcher).filter(key => pubkeys.has(key.pubkey)).forEach(key => {
-        if(key.wif == null) {
-          throw new Error(`login with your '${key.path}' key`)
-        }
-        keys.set(key.pubkey, key.wif)
-      })
-
-      pubkeys.forEach(key => {
-        if(!keys.has(key)) {
-          // Was keepPublicKeys true?
-          throw new Error(`missing public key ${key}`)
-        }
-      })
-
-      return Array.from(keys.values())
+    if(!pubkeys) {
+      return getKeys(keyPathMatcher)
+        .filter(key => key.wif != null)
+        .map(key => key.wif)
     }
 
-    return getKeys(keyPathMatcher)
-      .filter(key => key.wif != null)
-      .map(key => key.wif)
+    if(pubkeys instanceof Array) {
+      pubkeys = new Set(pubkeys)
+    }
+
+    assert(pubkeys instanceof Set, 'pubkeys should be a Set or Array')
+
+    const keys = new Map()
+
+    getKeys(keyPathMatcher).filter(key => pubkeys.has(key.pubkey)).forEach(key => {
+      if(key.wif == null) {
+        throw new Error(`login with your '${key.path}' key`)
+      }
+      keys.set(key.pubkey, key.wif)
+    })
+
+    pubkeys.forEach(key => {
+      if(!keys.has(key)) {
+        // Was keepPublicKeys true?
+        throw new Error(`missing public key ${key}`)
+      }
+    })
+
+    return Array.from(keys.values())
   }
 
   /**
@@ -610,6 +610,26 @@ function Keystore(accountName, config = {}) {
   }
 
   /**
+    @arg {pubkey} otherPubkey
+    @arg {keyPathMatcher} keyPathMatcher
+  */
+  function signSharedSecret(otherPubkey, keyPathMatcher = '**') {
+    assert(/pubkey|PublicKey/.test(validate.keyType(otherPubkey)), 'otherPubkey')
+    assert(typeof keyPathMatcher, 'string', 'keyPathMatcher')
+
+    const oneTimePrivate = PrivateKey.randomKey(0) // TODO, add and use ecc init routine
+    const sharedSecret = oneTimePrivate.getSharedSecret(otherPubkey)
+    const signatures = getPrivateKeys(keyPathMatcher).map(wif =>
+      ecc.sign(sharedSecret, wif)
+    )
+    const oneTimePublic = ecc.privateToPublic(oneTimePrivate)
+    return {
+      signatures,
+      oneTimePublic
+    }
+  }
+
+  /**
     Removes all saved keys on disk and clears keys in memory.  Call only when
     the user chooses "logout."  Do not call when the application exits.
   */
@@ -704,6 +724,7 @@ function Keystore(accountName, config = {}) {
     getPrivateKey,
     getPrivateKeys,
     removeKeys,
+    signSharedSecret,
     logout,
     timeUntilExpire,
     keepAlive,

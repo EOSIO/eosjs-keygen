@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 const assert = require('assert')
 const {accountPermissions, checkKeySet} = require('./test-utils.js')
-const {PrivateKey} = require('eosjs-ecc')
+const {PrivateKey, Signature} = require('eosjs-ecc')
 const ecc = require('eosjs-ecc')
 const config = require('./config')
 
@@ -317,6 +317,32 @@ describe('Keystore', () => {
 
     keystore.removeKeys(new Set(['active']), false/*keepPublicKeys*/)
     assert.deepEqual(keystore.getKeyPaths(), {pubkey: [], wif: []})
+  })
+
+  it('signSharedSecret', () => {
+    keystore = Keystore('myaccount', {uriRules: {'**': '.*'}})
+
+    keystore.deriveKeys({
+      parent: master,
+      accountPermissions // .. all 3 keys
+    })
+
+    const oneTimePrivate = PrivateKey.randomKey(0)
+    const oneTimePublic = ecc.privateToPublic(oneTimePrivate)
+
+    const ss = keystore.signSharedSecret(oneTimePublic)
+
+    const sharedSecret = oneTimePrivate.getSharedSecret(ss.oneTimePublic)
+
+    const recoveredPubkeys = ss.signatures.map(sig =>
+      Signature.fromHex(sig).recover(sharedSecret).toString()
+    )
+
+    assert.equal(recoveredPubkeys.length, 3, 'expecting 3 keys')
+    assert.deepEqual(
+      keystore.getPublicKeys().sort(),
+      recoveredPubkeys.sort()
+    )
   })
 
   it('keyProvider', () => {
