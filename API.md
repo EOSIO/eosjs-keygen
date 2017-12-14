@@ -334,13 +334,12 @@ Integration for 'eosjs' ..
 ## Keygen
 
 * [Keygen](#module_Keygen)
-    * [~generateMasterKeys(cpuEntropyBits)](#module_Keygen..generateMasterKeys) ⇒ <code>Promise</code>
-    * [~genKeys([masterPrivateKey], [cpuEntropyBits])](#module_Keygen..genKeys)
+    * [~generateMasterKeys([masterPrivateKey])](#module_Keygen..generateMasterKeys) ⇒ <code>Promise.&lt;object&gt;</code>
     * [~keyPathAuth](#module_Keygen..keyPathAuth) : <code>Object.&lt;keyPath, auth&gt;</code>
 
 <a name="module_Keygen..generateMasterKeys"></a>
 
-### Keygen~generateMasterKeys(cpuEntropyBits) ⇒ <code>Promise</code>
+### Keygen~generateMasterKeys([masterPrivateKey]) ⇒ <code>Promise.&lt;object&gt;</code>
 New accounts will call this to create a new keyset..
 
   A password manager or backup should save (at the very minimum) the returned
@@ -349,31 +348,20 @@ New accounts will call this to create a new keyset..
   in the backup for easy reference.
 
 **Kind**: inner method of [<code>Keygen</code>](#module_Keygen)  
+**Returns**: <code>Promise.&lt;object&gt;</code> - masterKeys  
 
-| Param | Type | Description |
-| --- | --- | --- |
-| cpuEntropyBits | <code>number</code> | Use 0 for fast testing, 128 (default) takes a   second |
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [masterPrivateKey] | [<code>masterPrivateKey</code>](#masterPrivateKey) | <code></code> | When null, a new random key   is created. |
 
 **Example**  
 ```js
-{
+masterKeys = {
   masterPrivateKey, // <= place in a password input field (password manager)
   privateKeys: {owner, active}, // <= derived from masterPrivateKey
   publicKeys: {owner, active} // <= derived from masterPrivateKey
 }
 ```
-<a name="module_Keygen..genKeys"></a>
-
-### Keygen~genKeys([masterPrivateKey], [cpuEntropyBits])
-Synchronous version of generateMasterKeys.
-
-**Kind**: inner method of [<code>Keygen</code>](#module_Keygen)  
-
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| [masterPrivateKey] | [<code>masterPrivateKey</code>](#masterPrivateKey) | <code></code> | When null, a random key   is created.. |
-| [cpuEntropyBits] | <code>number</code> | <code></code> | null to use CPU entropy or 0 for   fast test keys |
-
 <a name="module_Keygen..keyPathAuth"></a>
 
 ### Keygen~keyPathAuth : <code>Object.&lt;keyPath, auth&gt;</code>

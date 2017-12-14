@@ -8,7 +8,6 @@ const validate = require('./validate')
 module.exports = {
   generateMasterKeys,
   authsByPath,
-  genKeys,
   deriveKeys
 }
 
@@ -20,25 +19,42 @@ module.exports = {
   from the masterPrivateKey.  It is still a good idea to save all information
   in the backup for easy reference.
 
-  @arg {number} cpuEntropyBits - Use 0 for fast testing, 128 (default) takes a
-  second
+  @arg {masterPrivateKey} [masterPrivateKey = null] When null, a new random key
+  is created.
 
-  @return {Promise}
+  @return {Promise<object>} masterKeys
+
   @example
-{
+masterKeys = {
   masterPrivateKey, // <= place in a password input field (password manager)
   privateKeys: {owner, active}, // <= derived from masterPrivateKey
   publicKeys: {owner, active} // <= derived from masterPrivateKey
 }
 */
-function generateMasterKeys(cpuEntropyBits) {
-  return new Promise(resolve => {
-    // By default getKeys creates random masterPrivateKey returns this and
-    // other derived keys
-    setTimeout(() => {
-      const keys = genKeys(null, cpuEntropyBits)
-      resolve(keys)
-    })
+function generateMasterKeys(masterPrivateKey = null) {
+  return PrivateKey.initialize().then(() => {
+    if(masterPrivateKey == null) {
+      masterPrivateKey = PrivateKey.randomKey()
+    } else {
+      assert(validate.isMasterKey(masterPrivateKey), 'masterPrivateKey')
+      masterPrivateKey = PrivateKey(masterPrivateKey.substring('PW'.length))
+      assert(masterPrivateKey != null, 'masterPrivateKey is a valid private key')
+    }
+
+    const ownerPrivate = masterPrivateKey.getChildKey('owner')
+    const activePrivate = ownerPrivate.getChildKey('active')
+
+    return {
+      masterPrivateKey: `PW${masterPrivateKey.toWif()}`,
+      privateKeys: {
+        owner: ownerPrivate.toWif(),
+        active: activePrivate.toWif()
+      },
+      publicKeys: {
+        owner: ownerPrivate.toPublic().toString(),
+        active: activePrivate.toPublic().toString()
+      }
+    }
   })
 }
 
@@ -95,40 +111,6 @@ function authsByPath(accountPermissions) {
   })
 
   return auths
-}
-
-/**
-  Synchronous version of generateMasterKeys.
-
-  @arg {masterPrivateKey} [masterPrivateKey = null] When null, a random key
-  is created..
-
-  @arg {number} [cpuEntropyBits = null] null to use CPU entropy or 0 for
-  fast test keys
-*/
-function genKeys(masterPrivateKey, cpuEntropyBits) {
-  if(masterPrivateKey == null) {
-    masterPrivateKey = PrivateKey.randomKey(cpuEntropyBits)
-  } else {
-    assert(validate.isMasterKey(masterPrivateKey), 'masterPrivateKey')
-    masterPrivateKey = PrivateKey(masterPrivateKey.substring('PW'.length))
-    assert(masterPrivateKey != null, 'masterPrivateKey is a valid private key')
-  }
-
-  const ownerPrivate = masterPrivateKey.getChildKey('owner')
-  const activePrivate = ownerPrivate.getChildKey('active')
-
-  return {
-    masterPrivateKey: `PW${masterPrivateKey.toWif()}`,
-    privateKeys: {
-      owner: ownerPrivate.toWif(),
-      active: activePrivate.toWif()
-    },
-    publicKeys: {
-      owner: ownerPrivate.toPublic().toString(),
-      active: activePrivate.toPublic().toString()
-    }
-  }
 }
 
 /**

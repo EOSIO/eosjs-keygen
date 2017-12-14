@@ -48,13 +48,13 @@ describe('Keystore', () => {
 
   it('initialize from disk', () => {
     keystore = Keystore('myaccount')
-  
+
     const privateKey = PrivateKey.randomKey(0)
     const wif = privateKey.toWif()
     const pubkey = privateKey.toPublic().toString()
-  
+
     keystore.addKey('active/mypermission', wif, true/*disk*/)
-  
+
     keystore = Keystore('myaccount')
     assert.deepEqual(keystore.getKeyPaths(), {
       pubkey: ['active/mypermission'],
@@ -192,7 +192,7 @@ describe('Keystore', () => {
   it('timeout', (done) => {
     const config = {
       uriRules: {'**': '.*'},
-      timeoutInMin: .001,
+      timeoutInMin: .0001,
       timeoutKeyPaths: ['owner', 'owner/**']
     }
 
@@ -208,7 +208,7 @@ describe('Keystore', () => {
       done()
     }
 
-    setTimeout(() => {timeout()}, .002 * min)
+    setTimeout(() => {timeout()}, .003 * min)
   })
 
   it('deriveKey disk security', () => {
