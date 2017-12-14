@@ -610,23 +610,30 @@ function Keystore(accountName, config = {}) {
   }
 
   /**
+    @typedef {object} oneTimeSignatures
+    @property {Array<string>} signatures - in hex 
+    @property {pubkey} oneTimePublic
+  */
+  /**
     @arg {pubkey} otherPubkey
     @arg {keyPathMatcher} keyPathMatcher
+    @return {Promise<oneTimeSignatures>}
   */
   function signSharedSecret(otherPubkey, keyPathMatcher = '**') {
     assert(/pubkey|PublicKey/.test(validate.keyType(otherPubkey)), 'otherPubkey')
     assert(typeof keyPathMatcher, 'string', 'keyPathMatcher')
 
-    const oneTimePrivate = PrivateKey.randomKey(0) // TODO, add and use ecc init routine
-    const sharedSecret = oneTimePrivate.getSharedSecret(otherPubkey)
-    const signatures = getPrivateKeys(keyPathMatcher).map(wif =>
-      ecc.sign(sharedSecret, wif)
-    )
-    const oneTimePublic = ecc.privateToPublic(oneTimePrivate)
-    return {
-      signatures,
-      oneTimePublic
-    }
+    return PrivateKey.randomKey().then(oneTimePrivate => {
+      const sharedSecret = oneTimePrivate.getSharedSecret(otherPubkey)
+      const signatures = getPrivateKeys(keyPathMatcher).map(wif =>
+        ecc.sign(sharedSecret, wif)
+      )
+      const oneTimePublic = ecc.privateToPublic(oneTimePrivate)
+      return {
+        signatures,
+        oneTimePublic
+      }
+    })
   }
 
   /**

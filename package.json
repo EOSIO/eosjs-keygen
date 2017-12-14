@@ -13,7 +13,8 @@
     "build": "npm run docs && npm run build_lib && npm run build_browser",
     "docs": "jsdoc2md src/keystore.js src/keygen.js src/jsdoc-types.js > API.md",
     "build_lib": "babel src --out-dir lib",
-    "build_browser": "mkdir -p dist && browserify -o dist/eosjs-keygen.js -s kos src/index.js"
+    "build_browser": "mkdir -p dist && browserify -o dist/eosjs-keygen.js -s kos src/index.js",
+    "build_browser_test": "mkdir -p dist && browserify -o dist/mocha-test.js src/*.test.js"
   },
   "repository": {
     "type": "git",
@@ -41,7 +42,7 @@
     "mocha": "^3.4.2"
   },
   "dependencies": {
-    "eosjs-ecc": "^1.6.3",
+    "eosjs-ecc": "^2.0.1",
     "history": "^4.7.2",
     "localStorage": "^1.0.3",
     "minimatch": "^3.0.4"

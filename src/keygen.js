@@ -32,20 +32,20 @@ masterKeys = {
 }
 */
 function generateMasterKeys(masterPrivateKey = null) {
-  return PrivateKey.initialize().then(() => {
-    if(masterPrivateKey == null) {
-      masterPrivateKey = PrivateKey.randomKey()
-    } else {
-      assert(validate.isMasterKey(masterPrivateKey), 'masterPrivateKey')
-      masterPrivateKey = PrivateKey(masterPrivateKey.substring('PW'.length))
-      assert(masterPrivateKey != null, 'masterPrivateKey is a valid private key')
-    }
+  let master
+  if(masterPrivateKey == null) {
+    master = PrivateKey.randomKey()
+  } else {
+    assert(validate.isMasterKey(masterPrivateKey), 'masterPrivateKey')
+    master = PrivateKey(masterPrivateKey.substring('PW'.length))
+  }
 
-    const ownerPrivate = masterPrivateKey.getChildKey('owner')
+  return Promise.resolve(master).then(master => {
+    const ownerPrivate = master.getChildKey('owner')
     const activePrivate = ownerPrivate.getChildKey('active')
 
     return {
-      masterPrivateKey: `PW${masterPrivateKey.toWif()}`,
+      masterPrivateKey: `PW${master.toWif()}`,
       privateKeys: {
         owner: ownerPrivate.toWif(),
         active: activePrivate.toWif()

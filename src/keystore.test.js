@@ -46,10 +46,10 @@ describe('Keystore', () => {
     Keystore('uid')
   })
 
-  it('initialize from disk', () => {
+  it('initialize from disk', async function() {
     keystore = Keystore('myaccount')
 
-    const privateKey = PrivateKey.randomKey(0)
+    const privateKey = await PrivateKey.randomKey()
     const wif = privateKey.toWif()
     const pubkey = privateKey.toPublic().toString()
 
@@ -62,9 +62,9 @@ describe('Keystore', () => {
     })
   })
 
-  it('active key login (without comparing blockchain permission)', () => {
+  it('active key login (without comparing blockchain permission)', async function() {
     const keystore = Keystore('uid')
-    const privateKey = PrivateKey.randomKey(0)
+    const privateKey = await PrivateKey.randomKey()
     const wif = privateKey.toWif()
 
     keystore.deriveKeys({parent: wif})
@@ -219,11 +219,11 @@ describe('Keystore', () => {
     )
   })
 
-  it('addKey disk security', () => {
+  it('addKey disk security', async function() {
     keystore = Keystore('myaccount')
 
     const disk = true
-    const privateKey = PrivateKey.randomKey(0)
+    const privateKey = await PrivateKey.randomKey()
     const save = path => keystore.addKey(path, privateKey, disk)
 
     assert.throws(() => {save('owner')}, /not be stored on disk/)
@@ -233,11 +233,11 @@ describe('Keystore', () => {
     assert.doesNotThrow(() => {save('active/mypermission')})
   })
 
-  it('save key', () => {
+  it('save key', async function() {
     keystore = Keystore('myaccount')
     const save = key => keystore.addKey('active', key)
 
-    const privateKey = PrivateKey.randomKey(0)
+    const privateKey = await PrivateKey.randomKey()
     const wif = privateKey.toWif()
     const publicKey = privateKey.toPublic()
     const pubkey = publicKey.toString()
@@ -248,12 +248,12 @@ describe('Keystore', () => {
     assert.deepEqual(save(pubkey), {pubkey, dirty: false})
   })
 
-  it('save and get keys', () => {
+  it('save and get keys', async function() {
     keystore = Keystore('myaccount', {
       uriRules: {'**': '.*'} // allow owner key
     })
 
-    const privateKey = PrivateKey.randomKey(0)
+    const privateKey = await PrivateKey.randomKey()
     const wif = privateKey.toWif()
     const pubkey = privateKey.toPublic().toString()
 
@@ -300,10 +300,10 @@ describe('Keystore', () => {
     })
   })
 
-  it('removeKeys', () => {
+  it('removeKeys', async function() {
     keystore = Keystore('myaccount')
 
-    const privateKey = PrivateKey.randomKey(0)
+    const privateKey = await PrivateKey.randomKey()
     const wif = privateKey.toWif()
     const pubkey = privateKey.toPublic().toString()
 
@@ -319,7 +319,7 @@ describe('Keystore', () => {
     assert.deepEqual(keystore.getKeyPaths(), {pubkey: [], wif: []})
   })
 
-  it('signSharedSecret', () => {
+  it('signSharedSecret', async function() {
     keystore = Keystore('myaccount', {uriRules: {'**': '.*'}})
 
     keystore.deriveKeys({
@@ -327,15 +327,15 @@ describe('Keystore', () => {
       accountPermissions // .. all 3 keys
     })
 
-    const oneTimePrivate = PrivateKey.randomKey(0)
+    const oneTimePrivate = await PrivateKey.randomKey()
     const oneTimePublic = ecc.privateToPublic(oneTimePrivate)
 
-    const ss = keystore.signSharedSecret(oneTimePublic)
+    const ss = await keystore.signSharedSecret(oneTimePublic)
 
     const sharedSecret = oneTimePrivate.getSharedSecret(ss.oneTimePublic)
 
     const recoveredPubkeys = ss.signatures.map(sig =>
-      Signature.fromHex(sig).recover(sharedSecret).toString()
+      ecc.recover(sig, sharedSecret)
     )
 
     assert.equal(recoveredPubkeys.length, 3, 'expecting 3 keys')
@@ -366,9 +366,9 @@ describe('Keystore', () => {
       /missing public key EOS.*/)
   })
 
-  it('wipe all', () => {
+  it('wipe all', async function() {
     keystore = Keystore('myaccount')
-    keystore.addKey('active/mypermission', PrivateKey.randomKey(0), true/*disk*/)
+    keystore.addKey('active/mypermission', await PrivateKey.randomKey(), true/*disk*/)
 
     Keystore.wipeAll()
 
@@ -376,10 +376,10 @@ describe('Keystore', () => {
     assert.deepEqual(keystore.getKeyPaths(), {pubkey: [], wif: []})
   })
 
-  it('logout', () => {
+  it('logout', async function() {
     keystore = Keystore('myaccount')
 
-    const privateKey = PrivateKey.randomKey(0)
+    const privateKey = await PrivateKey.randomKey()
     const wif = privateKey.toWif()
     const pubkey = privateKey.toPublic().toString()
 
