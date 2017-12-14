@@ -102,11 +102,12 @@ non-canonical path match.  Uri paths should be canonical.</li>
             * [~getPrivateKey(path)](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
             * [~getPrivateKeys([keyPathMatcher], [pubkeys])](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
             * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
-            * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret)
+            * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret) ⇒ <code>Promise.&lt;oneTimeSignatures&gt;</code>
             * [~logout()](#module_Keystore..Keystore..logout)
             * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
             * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
             * [~keyProvider(param)](#module_Keystore..Keystore..keyProvider) ⇒ <code>Array.&lt;(pubkey\|wif)&gt;</code>
+    * [~oneTimeSignatures](#module_Keystore..oneTimeSignatures) : <code>object</code>
 
 <a name="module_Keystore..Keystore"></a>
 
@@ -159,7 +160,7 @@ config = {
         * [~getPrivateKey(path)](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
         * [~getPrivateKeys([keyPathMatcher], [pubkeys])](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
         * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
-        * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret)
+        * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret) ⇒ <code>Promise.&lt;oneTimeSignatures&gt;</code>
         * [~logout()](#module_Keystore..Keystore..logout)
         * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
         * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
@@ -271,7 +272,7 @@ Fetch or derive a key pairs.
 
 <a name="module_Keystore..Keystore..signSharedSecret"></a>
 
-#### Keystore~signSharedSecret(otherPubkey, keyPathMatcher)
+#### Keystore~signSharedSecret(otherPubkey, keyPathMatcher) ⇒ <code>Promise.&lt;oneTimeSignatures&gt;</code>
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 
 | Param | Type | Default |
@@ -328,6 +329,17 @@ Integration for 'eosjs' ..
 | param | <code>object</code> |  |  |
 | [param.keyPathMatcher] | <code>string</code> | <code>&quot;&#x27;**&#x27;&quot;</code> | param.keyPathMatcher for public keys |
 | [param.pubkeys] | [<code>Array.&lt;pubkey&gt;</code>](#pubkey) \| [<code>Set.&lt;pubkey&gt;</code>](#pubkey) |  | for fetching private keys |
+
+<a name="module_Keystore..oneTimeSignatures"></a>
+
+### Keystore~oneTimeSignatures : <code>object</code>
+**Kind**: inner typedef of [<code>Keystore</code>](#module_Keystore)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| signatures | <code>Array.&lt;string&gt;</code> | in hex |
+| oneTimePublic | [<code>pubkey</code>](#pubkey) |  |
 
 <a name="module_Keygen"></a>
 
