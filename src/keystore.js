@@ -243,12 +243,19 @@ function Keystore(accountName, config = {}) {
     uniqueKeyByRole('owner')
 
     // cache
-    userStorage.save(
-      localStorage,
-      [accountName, 'permissions'],
-      JSON.stringify(accountPermissions),
-      false // immutable
-    )
+    try {
+      userStorage.save(
+        localStorage,
+        [accountName, 'permissions'],
+        JSON.stringify(accountPermissions),
+        false // immutable
+      )
+    } catch(error) {
+      if(error.message === 'immutable') {
+        throw new Error('invalid login')
+      }
+      throw error
+    }
 
     let keyUpdates = [], match = false, allow = false
 
@@ -641,11 +648,20 @@ function Keystore(accountName, config = {}) {
     the user chooses "logout."  Do not call when the application exits.
   */
   function logout() {
+    wipeUser(false)
+  }
+
+  /**
+    Like logout, but forgets everything allowing the user to use a new password
+    next time.
+  */
+  function wipeUser(complete = true) {
     for(const key in state) {
       delete state[key]
     }
 
-    const prefix = userStorage.createKey(accountName, 'kpath')
+    const path = complete ? [accountName] : [accountName, 'kpath']
+    const prefix = userStorage.createKey(...path)
     for(const key in localStorage) {
       if(key.indexOf(prefix) === 0) {
         delete localStorage[key]
@@ -733,6 +749,7 @@ function Keystore(accountName, config = {}) {
     removeKeys,
     signSharedSecret,
     logout,
+    wipeUser,
     timeUntilExpire,
     keepAlive,
     keyProvider

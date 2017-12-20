@@ -104,6 +104,7 @@ non-canonical path match.  Uri paths should be canonical.</li>
             * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
             * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret) ⇒ <code>Promise.&lt;oneTimeSignatures&gt;</code>
             * [~logout()](#module_Keystore..Keystore..logout)
+            * [~wipeUser()](#module_Keystore..Keystore..wipeUser)
             * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
             * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
             * [~keyProvider(param)](#module_Keystore..Keystore..keyProvider) ⇒ <code>Array.&lt;(pubkey\|wif)&gt;</code>
@@ -162,6 +163,7 @@ config = {
         * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
         * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret) ⇒ <code>Promise.&lt;oneTimeSignatures&gt;</code>
         * [~logout()](#module_Keystore..Keystore..logout)
+        * [~wipeUser()](#module_Keystore..Keystore..wipeUser)
         * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
         * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
         * [~keyProvider(param)](#module_Keystore..Keystore..keyProvider) ⇒ <code>Array.&lt;(pubkey\|wif)&gt;</code>
@@ -285,6 +287,13 @@ Fetch or derive a key pairs.
 #### Keystore~logout()
 Removes all saved keys on disk and clears keys in memory.  Call only when
     the user chooses "logout."  Do not call when the application exits.
+
+**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
+<a name="module_Keystore..Keystore..wipeUser"></a>
+
+#### Keystore~wipeUser()
+Like logout, but forgets everything allowing the user to use a new password
+    next time.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 <a name="module_Keystore..Keystore..timeUntilExpire"></a>

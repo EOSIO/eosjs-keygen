@@ -376,16 +376,28 @@ describe('Keystore', () => {
     assert.deepEqual(keystore.getKeyPaths(), {pubkey: [], wif: []})
   })
 
-  it('logout', async function() {
+  it('logout / wipeUser', async function() {
     keystore = Keystore('myaccount')
 
     const privateKey = await PrivateKey.randomKey()
     const wif = privateKey.toWif()
     const pubkey = privateKey.toPublic().toString()
 
-    keystore.addKey('active/mypermission', wif, true/*disk*/)
-
+    // saves the public keys
+    keystore.deriveKeys({parent: `PW${await ecc.unsafeRandomKey()}`})
     keystore.logout()
+    assert(keystore.getKeys().length === 0, 'getKeys().length === 0')
+
+    // knows we changed the password
+    assert.throws(() => {keystore.deriveKeys({parent: master})}, /invalid login$/)
+
+    // forget everything
+    keystore.wipeUser()
+
+    // use a new password
+    keystore.deriveKeys({parent: master})
+    keystore.logout()
+    assert(keystore.getKeys().length === 0, 'getKeys().length === 0')
 
     assert.deepEqual(keystore.getKeyPaths(), {
       pubkey: [],

@@ -27,7 +27,7 @@ function Storage(namespace) {
   function save(state, key, value, {immutable = true, clobber =  true} = {}) {
     assert.equal(typeof state, 'object', 'state')
 
-    key = Array.isArray(key) ? createKey(key) : key
+    key = Array.isArray(key) ? createKey(...key) : key
     assert.equal(typeof key, 'string', 'key')
 
     assert(value == null || typeof value === 'string' || typeof value === 'object',
@@ -59,7 +59,7 @@ function Storage(namespace) {
   function get(state, key) {
     assert.equal(typeof state, 'object', 'state')
 
-    key = Array.isArray(key) ? createKey(key) : key
+    key = Array.isArray(key) ? createKey(...key) : key
     assert.equal(typeof key, 'string', 'key')
 
     return deNull(state[key])
