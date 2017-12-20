@@ -24,7 +24,7 @@ function Storage(namespace) {
     @return {boolean} dirty
     @throws {AssertionError} immutable
   */
-  function save(state, key, value, {immutable = true, clobber =  true} = {}) {
+  function save(state, key, value, {immutable = true, clobber = true} = {}) {
     assert.equal(typeof state, 'object', 'state')
 
     key = Array.isArray(key) ? createKey(...key) : key
@@ -33,8 +33,10 @@ function Storage(namespace) {
     assert(value == null || typeof value === 'string' || typeof value === 'object',
       'value should be null, a string, or a serializable object')
 
-    const existing = deNull(state[key])
-    if(!clobber && value == null && existing != null) {
+    const existing = deNull(state[key]) // convert 'null' string back into null
+
+    if(value == null && existing != null && !clobber) {
+      // don't erase it, keep the existing value
       value = existing
     }
 
@@ -42,7 +44,6 @@ function Storage(namespace) {
     assert(existing == null || !(dirty && immutable), 'immutable')
 
     if(dirty) {
-      // console.log('save', key, value)
       state[key] = value
     }
 

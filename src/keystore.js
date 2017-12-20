@@ -105,8 +105,8 @@ function Keystore(accountName, config = {}) {
     @arg {parentPrivateKey} params.parent - Master password (masterPrivateKey),
     active, owner, or other permission key.
 
-    @arg {Array<keyPathMatcher>} [params.saveKeyMatches] - These permissions
-    will be saved to disk. (example: [`active/**`, ..]).
+    @arg {Array<keyPathMatcher>} [params.saveKeyMatches] - These private
+    keys will be saved to disk. (example: `active`).
 
     @arg {accountPermissions} [params.accountPermissions] - Permissions object
     from Eos blockchain via get_account.  This is used to validate the parent
@@ -243,19 +243,12 @@ function Keystore(accountName, config = {}) {
     uniqueKeyByRole('owner')
 
     // cache
-    try {
-      userStorage.save(
-        localStorage,
-        [accountName, 'permissions'],
-        JSON.stringify(accountPermissions),
-        false // immutable
-      )
-    } catch(error) {
-      if(error.message === 'immutable') {
-        throw new Error('invalid login')
-      }
-      throw error
-    }
+    userStorage.save(
+      localStorage,
+      [accountName, 'permissions'],
+      JSON.stringify(accountPermissions),
+      false // immutable
+    )
 
     let keyUpdates = [], match = false, allow = false
 
@@ -354,13 +347,13 @@ function Keystore(accountName, config = {}) {
 
     @arg {keyPath} path - active/mypermission, owner, active, ..
     @arg {string} key - wif, pubkey, or privateKey
-    @arg {boolean} disk - save to persistent storage (localStorage)
+    @arg {boolean} persistPrivateKey - save to persistent storage (localStorage)
 
-    @throws {AssertionError} path error or active, owner/* disk save attempted
+    @throws {AssertionError} path error or active, owner/* persistPrivateKey save attempted
 
     @return {object} {[wif], pubkey, dirty} or null (denied by uriRules)
   */
-  function addKey(path, key, disk = false) {
+  function addKey(path, key, persistPrivateKey = false) {
     validate.path(path)
     keepAlive()
 
@@ -368,7 +361,7 @@ function Keystore(accountName, config = {}) {
     assert(/^wif|pubkey|privateKey$/.test(keyType),
       'key should be a wif, public key string, or privateKey object')
 
-    if(disk) {
+    if(persistPrivateKey) {
       assert(path !== 'owner', 'owner key should not be stored on disk')
       assert(path.indexOf('owner/') !== 0,
         'owner derived keys should not be stored on disk')
@@ -396,8 +389,10 @@ function Keystore(accountName, config = {}) {
     const storageKey = userStorage.createKey(accountName, 'kpath', path, pubkey)
 
     let dirty = userStorage.save(state, storageKey, wif, {clobber: false})
-    if(disk) {
-      dirty = userStorage.save(localStorage, storageKey, wif, {clobber: false}) && dirty
+    const diskWif = persistPrivateKey ? wif : null
+
+    if(userStorage.save(localStorage, storageKey, diskWif, {clobber: false})) {
+      dirty = true
     }
 
     return wif == null ? {pubkey, dirty} : {wif, pubkey, dirty}
@@ -528,7 +523,11 @@ function Keystore(accountName, config = {}) {
 
     function query(store) {
       userStorage.query(store, [accountName, 'kpath'], ([path, pubkey], wif) => {
-        wifsByPath[path] = wif
+        if(wif == null) {
+          wif = wifsByPath[path]
+        } else {
+          wifsByPath[path] = wif
+        }
         if(minimatch(path, keyPathMatcher)) {
           const result = {path, pubkey}
           result.deny = uriRules.deny(currentUriPath(), path).length !== 0

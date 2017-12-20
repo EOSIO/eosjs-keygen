@@ -148,8 +148,9 @@ function deriveKeys(path, wifsByPath) {
 
   const newKeys = []
   let extendedPath = bestPath
-  let extendedPrivate = PrivateKey(wifsByPath[bestPath])
-
+  const wif = wifsByPath[bestPath]
+  assert(!!wif, 'wif')
+  let extendedPrivate = PrivateKey(wif)
   for(const extend of path.substring(bestPath.length + '/'.length).split('/')) {
     extendedPrivate = extendedPrivate.getChildKey(extend)
     extendedPath += `/${extend}`

@@ -31,7 +31,9 @@ function reset() {
 }
 
 describe('Keystore', () => {
+  before(() => PrivateKey.initialize())
   const master = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
+
 
   beforeEach(() => {
     pathname = '/'
@@ -262,25 +264,28 @@ describe('Keystore', () => {
       pubkey,
       dirty: true
     })
+
     assert.deepEqual(keystore.getKeyPaths(), {
       pubkey: ['owner'],
       wif: ['owner']
     })
+
     assert.deepEqual(keystore.getPublicKeys(), [pubkey])
     assert.deepEqual(keystore.getPublicKeys('owner'), [pubkey])
 
-    assert.deepEqual(keystore.getPublicKey('owner'), pubkey)
-    assert.deepEqual(keystore.getPrivateKey('owner'), wif)
+    assert.equal(keystore.getPublicKey('owner'), pubkey)
+    assert.equal(keystore.getPrivateKey('owner'), wif)
 
     const cold = privateKey.getChildKey('cold')
-    assert.deepEqual(keystore.getPublicKey('owner/cold'), cold.toPublic().toString())
-    assert.deepEqual(keystore.getPrivateKey('owner/cold'), cold.toWif())
+    assert.equal(keystore.getPublicKey('owner/cold'), cold.toPublic().toString())
+    assert.equal(keystore.getPrivateKey('owner/cold'), cold.toWif())
 
     // keep the owner key above, add public key active/other
     assert.deepEqual(keystore.addKey('active/other', pubkey), {
       pubkey,
       dirty: true
     })
+
     assert.deepEqual(keystore.getKeyPaths(), {
       pubkey: ['owner', 'active/other'],
       wif: ['owner']
@@ -327,7 +332,7 @@ describe('Keystore', () => {
       accountPermissions // .. all 3 keys
     })
 
-    const oneTimePrivate = await PrivateKey.randomKey()
+    const oneTimePrivate = await PrivateKey.unsafeRandomKey()
     const oneTimePublic = ecc.privateToPublic(oneTimePrivate)
 
     const ss = await keystore.signSharedSecret(oneTimePublic)
@@ -386,27 +391,25 @@ describe('Keystore', () => {
     // saves the public keys
     keystore.deriveKeys({parent: `PW${await ecc.unsafeRandomKey()}`})
     keystore.logout()
-    assert(keystore.getKeys().length === 0, 'getKeys().length === 0')
+    assert.equal(keystore.getKeys().length, 0, 'getKeys().length')
 
     // knows we changed the password
     assert.throws(() => {keystore.deriveKeys({parent: master})}, /invalid login$/)
 
     // forget everything
     keystore.wipeUser()
-
-    // use a new password
-    keystore.deriveKeys({parent: master})
-    keystore.logout()
-    assert(keystore.getKeys().length === 0, 'getKeys().length === 0')
-
     assert.deepEqual(keystore.getKeyPaths(), {
       pubkey: [],
       wif: []
     })
 
+    // use a new password
+    keystore.deriveKeys({parent: master})
+    assert.equal(keystore.getKeys().length, 1, 'getKeys().length')
+
     const keyPathStore2 = Keystore('myaccount')
     assert.deepEqual(keyPathStore2.getKeyPaths(), {
-      pubkey: [],
+      pubkey: ['active'],
       wif: []
     })
   })
