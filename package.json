@@ -1,6 +1,6 @@
 {
   "name": "eosjs-keygen",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "General purpose library for private key storage and key management.",
   "main": "lib/index.js",
   "browser": "lib/browser.js",
