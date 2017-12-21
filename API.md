@@ -104,7 +104,6 @@ non-canonical path match.  Uri paths should be canonical.</li>
             * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
             * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret) ⇒ <code>Promise.&lt;oneTimeSignatures&gt;</code>
             * [~logout()](#module_Keystore..Keystore..logout)
-            * [~wipeUser()](#module_Keystore..Keystore..wipeUser)
             * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
             * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
             * [~keyProvider(param)](#module_Keystore..Keystore..keyProvider) ⇒ <code>Array.&lt;(pubkey\|wif)&gt;</code>
@@ -163,7 +162,6 @@ config = {
         * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
         * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret) ⇒ <code>Promise.&lt;oneTimeSignatures&gt;</code>
         * [~logout()](#module_Keystore..Keystore..logout)
-        * [~wipeUser()](#module_Keystore..Keystore..wipeUser)
         * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
         * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
         * [~keyProvider(param)](#module_Keystore..Keystore..keyProvider) ⇒ <code>Array.&lt;(pubkey\|wif)&gt;</code>
@@ -191,7 +189,7 @@ Login or derive and save private keys.  This may be called from a login
 | --- | --- | --- |
 | params | <code>object</code> |  |
 | params.parent | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password (masterPrivateKey),     active, owner, or other permission key. |
-| [params.saveKeyMatches] | [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These permissions     will be saved to disk. (example: [`active/**`, ..]). |
+| [params.saveKeyMatches] | [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These private     keys will be saved to disk. (example: `active`). |
 | [params.accountPermissions] | [<code>accountPermissions</code>](#accountPermissions) | Permissions object     from Eos blockchain via get_account.  This is used to validate the parent     and derive additional permission keys.  This allows this keystore to detect     incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
 
 <a name="module_Keystore..Keystore..getKeyPaths"></a>
@@ -288,12 +286,7 @@ Fetch or derive a key pairs.
 Removes all saved keys on disk and clears keys in memory.  Call only when
     the user chooses "logout."  Do not call when the application exits.
 
-**Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
-<a name="module_Keystore..Keystore..wipeUser"></a>
-
-#### Keystore~wipeUser()
-Like logout, but forgets everything allowing the user to use a new password
-    next time.
+    Forgets everything allowing the user to use a new password next time.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 <a name="module_Keystore..Keystore..timeUntilExpire"></a>

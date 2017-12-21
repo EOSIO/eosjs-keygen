@@ -33,7 +33,7 @@ function reset() {
 describe('Keystore', () => {
   before(() => PrivateKey.initialize())
   const master = 'PW5JMx76CTUTXxpAbwAqGMMVzSeJaP5UVTT5c2uobcpaMUdLAphSp'
-
+  const master2 = 'PW5JKvXxVvnFgyHZSmGASQfnmya3QrgdQ46ydQn7CzVB6RNT3nCnu'
 
   beforeEach(() => {
     pathname = '/'
@@ -64,31 +64,92 @@ describe('Keystore', () => {
     })
   })
 
-  it('active key login (without comparing blockchain permission)', async function() {
-    const keystore = Keystore('uid')
-    const privateKey = await PrivateKey.randomKey()
-    const wif = privateKey.toWif()
+  it('saveKeyMatches', () => {
+    keystore = Keystore('myaccount')
 
-    keystore.deriveKeys({parent: wif})
-    const keyPaths = ['active']
+    keystore.deriveKeys({
+      parent: master,
+      accountPermissions,
+      saveKeyMatches: 'active{,/**}'
+    })
 
-    assert.deepEqual(keystore.getKeyPaths(),
-      {pubkey: keyPaths, wif: keyPaths})
+    keystore = Keystore('myaccount')
+    assert.deepEqual(keystore.getKeyPaths(), {
+      pubkey: ['active', 'active/mypermission'],
+      wif: ['active', 'active/mypermission']
+    })
   })
 
-  it('owner key login (without comparing blockchain permission)', () => {
-    const keystore = Keystore('uid')
+  describe('login', () => {
+    it('active key (without blockchain permission)', async function() {
+      keystore = Keystore('uid')
+      const privateKey = await PrivateKey.randomKey()
+      const wif = privateKey.toWif()
+      
+      keystore.deriveKeys({parent: wif})
 
-    keystore.deriveKeys({parent: master})
-    const keyPaths = ['active']
+      const keyPaths = ['active']
 
-    assert.deepEqual(keystore.getKeyPaths(),
-      {pubkey: keyPaths, wif: keyPaths})
+      assert.deepEqual(
+        keystore.getKeyPaths(),
+        {pubkey: keyPaths, wif: keyPaths}
+      )
+    })
+    
+    it('master key (without blockchain permission)', () => {
+      keystore = Keystore('uid')
+      
+      keystore.deriveKeys({parent: master})
+
+      const keyPaths = ['active']
+      
+      assert.deepEqual(
+        keystore.getKeyPaths(),
+        {pubkey: keyPaths, wif: keyPaths}
+      )
+    })
+
+    it('login changed', () => {
+      keystore = Keystore('uid')
+      keystore.deriveKeys({parent: master})
+      keystore.deriveKeys({parent: master2})
+    })
+
+    it('saved login changed', () => {
+      keystore = Keystore('uid')
+      keystore.deriveKeys({parent: master, saveKeyMatches: 'active'})
+      keystore.deriveKeys({parent: master2})
+    })
+  })
+
+  describe('invalid login', () => {
+    it('account permissions', () => {
+      keystore = Keystore('uid')
+      assert.throws(
+        () => {keystore.deriveKeys({parent: master2, accountPermissions})},
+        /invalid login/
+      )
+    })
+
+    it('account permissions early', () => {
+      keystore = Keystore('uid')
+      keystore.deriveKeys({parent: master, accountPermissions})
+      assert.throws(() => {keystore.deriveKeys({parent: master2})}, /invalid login/)
+    })
+
+    it('account permissions later', () => {
+      keystore = Keystore('uid')
+      keystore.deriveKeys({parent: master})
+      assert.throws(
+        () => {keystore.deriveKeys({parent: master2, accountPermissions})},
+        /invalid login/
+      )
+    })
   })
 
   for(const role of ['active', 'owner']) {
     it(`block ${role} key re-use`, () => {
-      const keystore = Keystore('uid')
+      keystore = Keystore('uid')
       const perm = JSON.parse(JSON.stringify(accountPermissions))
 
       const rolePos = role === 'active' ? 0 : role === 'owner' ? 2 : -1 
@@ -104,7 +165,7 @@ describe('Keystore', () => {
   }
 
   it('derive all active permisison keys', () => {
-    const keystore = Keystore('uid')
+    keystore = Keystore('uid')
     keystore.deriveKeys({parent: master, accountPermissions})
 
     const keyPaths = ['active', 'active/mypermission']
@@ -112,7 +173,7 @@ describe('Keystore', () => {
   })
 
   it('get derived active public keys', () => {
-    const keystore = Keystore('uid')
+    keystore = Keystore('uid')
     keystore.deriveKeys({parent: master, accountPermissions})
 
     assert.deepEqual(keystore.getPublicKeys(), [
@@ -213,7 +274,7 @@ describe('Keystore', () => {
     setTimeout(() => {timeout()}, .003 * min)
   })
 
-  it('deriveKey disk security', () => {
+  it('saveKeyMatches disk security', () => {
     keystore = Keystore('myaccount')
     assert.throws(() => 
       keystore.deriveKeys({parent: master, saveKeyMatches: 'owner'}),
@@ -381,7 +442,7 @@ describe('Keystore', () => {
     assert.deepEqual(keystore.getKeyPaths(), {pubkey: [], wif: []})
   })
 
-  it('logout / wipeUser', async function() {
+  it('logout', async function() {
     keystore = Keystore('myaccount')
 
     const privateKey = await PrivateKey.randomKey()
@@ -393,23 +454,13 @@ describe('Keystore', () => {
     keystore.logout()
     assert.equal(keystore.getKeys().length, 0, 'getKeys().length')
 
-    // knows we changed the password
-    assert.throws(() => {keystore.deriveKeys({parent: master})}, /invalid login$/)
-
-    // forget everything
-    keystore.wipeUser()
-    assert.deepEqual(keystore.getKeyPaths(), {
-      pubkey: [],
-      wif: []
-    })
-
     // use a new password
     keystore.deriveKeys({parent: master})
     assert.equal(keystore.getKeys().length, 1, 'getKeys().length')
 
     const keyPathStore2 = Keystore('myaccount')
     assert.deepEqual(keyPathStore2.getKeyPaths(), {
-      pubkey: ['active'],
+      pubkey: [],
       wif: []
     })
   })

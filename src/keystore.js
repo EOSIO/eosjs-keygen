@@ -192,12 +192,14 @@ function Keystore(accountName, config = {}) {
       perm_name, parent, required_auth: {keys: [{key: pubkey}]}
     })
 
+    // Know if this is stubbed in next (don't cache later)
+    const isPermissionStub = accountPermissions == null
+
     const parentKeys = {}
     if(keyType === 'master') {
       const masterPrivateKey = PrivateKey(parent.substring(2))
       parentKeys.owner = Keypair(masterPrivateKey.getChildKey('owner'))
       parentKeys.active = Keypair(parentKeys.owner.privateKey.getChildKey('active'))
-
       if(!accountPermissions) {
         accountPermissions = [
           perm('owner', 'active', parentKeys.active.pubkey),
@@ -242,21 +244,37 @@ function Keystore(accountName, config = {}) {
     uniqueKeyByRole('active')
     uniqueKeyByRole('owner')
 
-    // cache
-    userStorage.save(
-      localStorage,
-      [accountName, 'permissions'],
-      JSON.stringify(accountPermissions),
-      false // immutable
-    )
+    if(!isPermissionStub) {
+      // cache
+      userStorage.save(
+        localStorage,
+        [accountName, 'permissions'],
+        JSON.stringify(accountPermissions),
+        {immutable: false}
+      )
+    }
 
-    let keyUpdates = [], match = false, allow = false
+    let keyUpdates = [], allow = false
+
+    // check existing keys..
+    for(const path in authsByPath) {
+      const auth = authsByPath[path]
+      for(const parentPath in parentKeys) {
+        const parentKey = parentKeys[parentPath] // owner, active, other
+        if(auth.keys.find(k => k.key === parentKey.pubkey) != null) {
+          keyUpdates.push({path, privateKey: parentKey.privateKey})
+        }
+      }
+    }
+
+    if(keyUpdates.length === 0) {
+      throw new Error('invalid login')
+    }
 
     // Sync keyUpdates with storage ..
     function saveKeyUpdates() {
       // sort key updates so removeKeys will only remove children
       for(const {path, privateKey} of keyUpdates.sort()) {
-        match = true
         const disk = saveKeyMatches.find(m => minimatch(path, m)) != null
         const update = addKey(path, privateKey, disk)
         if(update) {
@@ -266,17 +284,6 @@ function Keystore(accountName, config = {}) {
             const children = getKeys(`${path}/**`).map(k => k.path)
             removeKeys(children, false/*keepPublicKeys*/)
           }
-        }
-      }
-    }
-
-    // check existing keys..
-    for(const path in authsByPath) {
-      const auth = authsByPath[path]
-      for(const parentPath in parentKeys) {
-        const parentKey = parentKeys[parentPath] // owner, active, other
-        if(auth.keys.find(k => k.key === parentKey.pubkey) != null) {
-          keyUpdates.push({path, privateKey: parentKey.privateKey})
         }
       }
     }
@@ -329,10 +336,6 @@ function Keystore(accountName, config = {}) {
     saveKeyUpdates()
     keyUpdates = []
 
-    if(!match) {
-      throw new Error('invalid login')
-    }
-
     if(!allow) {
       // uri rules blocked every key
       throw new Error('invalid login for page')
@@ -347,13 +350,13 @@ function Keystore(accountName, config = {}) {
 
     @arg {keyPath} path - active/mypermission, owner, active, ..
     @arg {string} key - wif, pubkey, or privateKey
-    @arg {boolean} persistPrivateKey - save to persistent storage (localStorage)
+    @arg {boolean} toDisk - save to persistent storage (localStorage)
 
-    @throws {AssertionError} path error or active, owner/* persistPrivateKey save attempted
+    @throws {AssertionError} path error or active, owner/* toDisk save attempted
 
     @return {object} {[wif], pubkey, dirty} or null (denied by uriRules)
   */
-  function addKey(path, key, persistPrivateKey = false) {
+  function addKey(path, key, toDisk = false) {
     validate.path(path)
     keepAlive()
 
@@ -361,7 +364,7 @@ function Keystore(accountName, config = {}) {
     assert(/^wif|pubkey|privateKey$/.test(keyType),
       'key should be a wif, public key string, or privateKey object')
 
-    if(persistPrivateKey) {
+    if(toDisk) {
       assert(path !== 'owner', 'owner key should not be stored on disk')
       assert(path.indexOf('owner/') !== 0,
         'owner derived keys should not be stored on disk')
@@ -389,10 +392,10 @@ function Keystore(accountName, config = {}) {
     const storageKey = userStorage.createKey(accountName, 'kpath', path, pubkey)
 
     let dirty = userStorage.save(state, storageKey, wif, {clobber: false})
-    const diskWif = persistPrivateKey ? wif : null
 
-    if(userStorage.save(localStorage, storageKey, diskWif, {clobber: false})) {
-      dirty = true
+    if(toDisk) {
+      const saved = userStorage.save(localStorage, storageKey, wif, {clobber: false})
+      dirty = dirty || saved
     }
 
     return wif == null ? {pubkey, dirty} : {wif, pubkey, dirty}
@@ -645,22 +648,15 @@ function Keystore(accountName, config = {}) {
   /**
     Removes all saved keys on disk and clears keys in memory.  Call only when
     the user chooses "logout."  Do not call when the application exits.
+
+    Forgets everything allowing the user to use a new password next time.
   */
   function logout() {
-    wipeUser(false)
-  }
-
-  /**
-    Like logout, but forgets everything allowing the user to use a new password
-    next time.
-  */
-  function wipeUser(complete = true) {
     for(const key in state) {
       delete state[key]
     }
 
-    const path = complete ? [accountName] : [accountName, 'kpath']
-    const prefix = userStorage.createKey(...path)
+    const prefix = userStorage.createKey(accountName)
     for(const key in localStorage) {
       if(key.indexOf(prefix) === 0) {
         delete localStorage[key]
@@ -748,7 +744,6 @@ function Keystore(accountName, config = {}) {
     removeKeys,
     signSharedSecret,
     logout,
-    wipeUser,
     timeUntilExpire,
     keepAlive,
     keyProvider
