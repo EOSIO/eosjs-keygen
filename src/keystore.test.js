@@ -386,29 +386,39 @@ describe('Keystore', () => {
   })
 
   it('signSharedSecret', async function() {
-    keystore = Keystore('myaccount', {uriRules: {'**': '.*'}})
+    // server creates "one time" random key pairs
 
-    keystore.deriveKeys({
+    const oneTimeServerPrivate = await PrivateKey.unsafeRandomKey() // server
+    const oneTimeServerPublic = ecc.privateToPublic(oneTimeServerPrivate) // server
+
+    const clientKeystore = Keystore('myaccount', {uriRules: {'**': '.*'}})
+
+    clientKeystore.deriveKeys({
       parent: master,
       accountPermissions // .. all 3 keys
     })
 
-    const oneTimePrivate = await PrivateKey.unsafeRandomKey()
-    const oneTimePublic = ecc.privateToPublic(oneTimePrivate)
+    // client receives oneTimeServerPublic
 
-    const ss = await keystore.signSharedSecret(oneTimePublic)
+    // client creates "one time" random key pairs (in signSharedSecret)
+    const clientProof = await clientKeystore.signSharedSecret(oneTimeServerPublic)
 
-    const sharedSecret = oneTimePrivate.getSharedSecret(ss.oneTimePublic)
+    // server receives clientProof
 
-    const recoveredPubkeys = ss.signatures.map(sig =>
-      ecc.recover(sig, sharedSecret)
+    // clientProof is a collection of signatures and a one time public
+    const sharedSecret = oneTimeServerPrivate.getSharedSecret(clientProof.oneTimePublic)
+
+    const recoveredPubkeys = clientProof.signatures.map(signature =>
+      ecc.recover(signature, sharedSecret) // server
     )
 
     assert.equal(recoveredPubkeys.length, 3, 'expecting 3 keys')
     assert.deepEqual(
-      keystore.getPublicKeys().sort(),
+      clientKeystore.getPublicKeys().sort(),
       recoveredPubkeys.sort()
     )
+
+    Keystore.wipeAll()
   })
 
   it('keyProvider', () => {
