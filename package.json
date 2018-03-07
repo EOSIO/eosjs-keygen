@@ -38,7 +38,7 @@
     "coveralls": "^2.13.1",
     "eosjs": "^4.0.2",
     "istanbul": "^1.1.0-alpha.1",
-    "jsdoc-to-markdown": "^3.0.2",
+    "jsdoc-to-markdown": "^3.0.4",
     "mocha": "^3.4.2"
   },
   "dependencies": {
