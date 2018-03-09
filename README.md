@@ -5,8 +5,6 @@
 
 General purpose library for private key storage and key management.
 
-Status: **Active Development, breaking changes..**
-
 ### Usage
 
 ```javascript
