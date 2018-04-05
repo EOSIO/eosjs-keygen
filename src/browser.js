@@ -1,5 +1,6 @@
 const Keystore = require('./keystore')
 const Keygen = require('./keygen')
+const ecc = require('eosjs-ecc')
 
 const createHistory = require('history').createBrowserHistory
 const config = require('./config')
@@ -9,5 +10,8 @@ config.localStorage = localStorage
 
 module.exports = {
   Keystore,
-  Keygen
+  Keygen,
+  modules: {
+    ecc
+  }
 }
