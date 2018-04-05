@@ -424,7 +424,7 @@ function Keystore(accountName, config = {}) {
     query(state)
     query(localStorage)
 
-    return {pubkey: Array.from(pubs), wif: Array.from(wifs)}
+    return {pubkey: Array.from(pubs).sort(), wif: Array.from(wifs).sort()}
   }
 
   /**

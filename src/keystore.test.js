@@ -240,14 +240,14 @@ describe('Keystore', () => {
     keystore.deriveKeys({parent: master, accountPermissions})
 
     assert.deepEqual(keystore.getKeyPaths(), {
-      pubkey: ['active', 'owner', 'active/mypermission'],
-      wif: ['active', 'owner', 'active/mypermission']
+      pubkey: ['active', 'active/mypermission', 'owner'],
+      wif: ['active', 'active/mypermission', 'owner']
     })
 
     pathname = '/transfers'
     historyListener() // trigger history change event
     assert.deepEqual(keystore.getKeyPaths(), {
-      pubkey: ['active', 'owner', 'active/mypermission'],
+      pubkey: ['active', 'active/mypermission', 'owner'],
       wif: ['active', 'active/mypermission']
     })
   })
@@ -262,7 +262,7 @@ describe('Keystore', () => {
     keystore = Keystore('myaccount', config)
     keystore.deriveKeys({parent: master, accountPermissions})
 
-    const before = ['active', 'owner', 'active/mypermission']
+    const before = ['active', 'active/mypermission', 'owner']
     assert.deepEqual(keystore.getKeyPaths(), {pubkey: before, wif: before})
 
     function timeout() {
@@ -348,7 +348,7 @@ describe('Keystore', () => {
     })
 
     assert.deepEqual(keystore.getKeyPaths(), {
-      pubkey: ['owner', 'active/other'],
+      pubkey: ['active/other', 'owner'],
       wif: ['owner']
     })
 
@@ -361,8 +361,8 @@ describe('Keystore', () => {
 
     // now we have everything: owner, active/mypermission
     assert.deepEqual(keystore.getKeyPaths(), {
-      pubkey: ['owner', 'active/other', 'active/mypermission'],
-      wif: ['owner', 'active/mypermission']
+      pubkey: ['active/mypermission', 'active/other', 'owner'],
+      wif: ['active/mypermission', 'owner']
     })
   })
 
