@@ -9,12 +9,13 @@
     "test": "mocha --use_strict src/*.test.js",
     "coverage": "istanbul cover _mocha -- -R spec src/*.test.js",
     "coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/.bin/coveralls",
-    "prepublish": "npm run build_lib && npm run docs",
-    "build": "npm run docs && npm run build_lib && npm run build_browser",
+    "prepublishOnly": "npm run build_lib && npm run prepublishOnly_test && npm run docs",
+    "prepublishOnly_test": "mocha --use_strict lib/*.test.js",
+    "build": "npm run docs && npm run build_browser",
     "docs": "jsdoc2md src/keystore.js src/keygen.js src/jsdoc-types.js > API.md",
     "build_lib": "babel src --out-dir lib",
-    "build_browser": "mkdir -p dist && browserify -o dist/eosjs-keygen.js -s kos src/index.js",
-    "build_browser_test": "mkdir -p dist && browserify -o dist/mocha-test.js src/*.test.js"
+    "build_browser": "npm run build_lib && mkdir -p dist && browserify -o dist/eosjs-keygen.js -s kos lib/index.js",
+    "build_browser_test": "npm run build_lib && mkdir -p dist && browserify -o dist/mocha-test.js lib/*.test.js"
   },
   "repository": {
     "type": "git",
