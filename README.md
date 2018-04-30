@@ -3,7 +3,9 @@
 
 # Repository
 
-General purpose library for private key storage and key management.
+Provides hierarchical deterministic key generation, storage, and management.
+
+General purpose cryptography is found in [eosjs-ecc](http://github.com/eosio/eosjs-ecc) library.
 
 ### Usage
 
