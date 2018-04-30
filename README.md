@@ -6,6 +6,10 @@
 General purpose library for private key storage and key management.
 
 ### Usage
+```sh
+# To generate a keypair
+node examples/generate-keypair.js
+```
 
 ```javascript
 let {Keystore, Keygen} = require('eosjs-keygen')
