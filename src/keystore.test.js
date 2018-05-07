@@ -85,7 +85,7 @@ describe('Keystore', () => {
       keystore = Keystore('uid')
       const privateKey = await PrivateKey.randomKey()
       const wif = privateKey.toWif()
-      
+
       keystore.deriveKeys({parent: wif})
 
       const keyPaths = ['active']
@@ -95,14 +95,14 @@ describe('Keystore', () => {
         {pubkey: keyPaths, wif: keyPaths}
       )
     })
-    
+
     it('master key (without blockchain permission)', () => {
       keystore = Keystore('uid')
-      
+
       keystore.deriveKeys({parent: master})
 
       const keyPaths = ['active']
-      
+
       assert.deepEqual(
         keystore.getKeyPaths(),
         {pubkey: keyPaths, wif: keyPaths}
@@ -152,11 +152,11 @@ describe('Keystore', () => {
       keystore = Keystore('uid')
       const perm = JSON.parse(JSON.stringify(accountPermissions))
 
-      const rolePos = role === 'active' ? 0 : role === 'owner' ? 2 : -1 
+      const rolePos = role === 'active' ? 0 : role === 'owner' ? 2 : -1
       const wif = perm[rolePos].required_auth.keys[0].key
 
       perm[(rolePos + 1) % perm.length].required_auth.keys[0].key = wif
-      
+
       assert.throws(() => {
         keystore.deriveKeys({parent: master, accountPermissions: perm})
       }, / key reused in authority/)
@@ -276,7 +276,7 @@ describe('Keystore', () => {
 
   it('saveKeyMatches disk security', () => {
     keystore = Keystore('myaccount')
-    assert.throws(() => 
+    assert.throws(() =>
       keystore.deriveKeys({parent: master, saveKeyMatches: 'owner'}),
       /do not save owner key to disk/
     )
@@ -434,11 +434,11 @@ describe('Keystore', () => {
     assert.equal(ecc.privateToPublic(wifs[0]), pubkeys[0])
 
     keystore.removeKeys('active')
-    assert.throws(() => {keystore.keyProvider({pubkeys})}, 
+    assert.throws(() => {keystore.keyProvider({pubkeys})},
       /login with your 'active' key/)
 
     keystore.removeKeys('active', false /* keepPublicKeys */)
-    assert.throws(() => {keystore.keyProvider({pubkeys})}, 
+    assert.throws(() => {keystore.keyProvider({pubkeys})},
       /missing public key EOS.*/)
   })
 
@@ -460,7 +460,7 @@ describe('Keystore', () => {
     const pubkey = privateKey.toPublic().toString()
 
     // saves the public keys
-    keystore.deriveKeys({parent: `PW${await ecc.unsafeRandomKey()}`})
+    keystore.deriveKeys({parent: `PW${wif}`})
     keystore.logout()
     assert.equal(keystore.getKeys().length, 0, 'getKeys().length')
 
