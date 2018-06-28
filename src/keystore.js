@@ -466,7 +466,7 @@ function Keystore(accountName, config = {}) {
     have private keys to return.
 
     @arg {keyPathMatcher} [keyPathMatcher = '**'] default is to match all
-    @arg {Array<pubkey>} [pubkeys = null] if specified, filter and require all 
+    @arg {Array<pubkey>} [pubkeys = null] if specified, filter and require all
 
     @throws Error `login with your ${key.pubkey} key`
     @throws Error `missing public key ${key}`
@@ -620,7 +620,7 @@ function Keystore(accountName, config = {}) {
 
   /**
     @typedef {object} oneTimeSignatures
-    @property {Array<string>} signatures - in hex 
+    @property {Array<string>} signatures - in hex
     @property {pubkey} oneTimePublic
   */
   /**
@@ -630,7 +630,7 @@ function Keystore(accountName, config = {}) {
   */
   function signSharedSecret(otherPubkey, keyPathMatcher = '**') {
     assert(/pubkey|PublicKey/.test(validate.keyType(otherPubkey)), 'otherPubkey')
-    assert(typeof keyPathMatcher, 'string', 'keyPathMatcher')
+    assert.equal(typeof keyPathMatcher, 'string', 'keyPathMatcher')
 
     return PrivateKey.randomKey().then(oneTimePrivate => {
       const sharedSecret = oneTimePrivate.getSharedSecret(otherPubkey)

@@ -6,11 +6,11 @@
   "browser": "lib/browser.js",
   "node": "",
   "scripts": {
-    "test": "mocha --use_strict src/*.test.js",
-    "coverage": "istanbul cover _mocha -- -R spec src/*.test.js",
+    "test": "mocha --exit --use_strict src/*.test.js",
+    "coverage": "istanbul cover _mocha -- --exit -R spec src/*.test.js",
     "coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/.bin/coveralls",
     "prepublishOnly": "npm run build_lib && npm run prepublishOnly_test && npm run docs",
-    "prepublishOnly_test": "mocha --use_strict lib/*.test.js",
+    "prepublishOnly_test": "mocha --exit --use_strict lib/*.test.js",
     "build": "npm run docs && npm run build_browser",
     "docs": "jsdoc2md src/keystore.js src/keygen.js src/jsdoc-types.js > API.md",
     "build_lib": "babel src --out-dir lib",
@@ -40,7 +40,7 @@
     "eosjs": "^4.0.2",
     "istanbul": "^1.1.0-alpha.1",
     "jsdoc-to-markdown": "^3.0.4",
-    "mocha": "^3.4.2"
+    "mocha": "^5.2.0"
   },
   "dependencies": {
     "eosjs-ecc": "^4.0.1",
