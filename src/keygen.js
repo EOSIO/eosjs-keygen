@@ -8,7 +8,8 @@ const validate = require('./validate')
 module.exports = {
   generateMasterKeys,
   authsByPath,
-  deriveKeys
+  deriveKeys,
+  privateToPublic
 }
 
 /**
@@ -163,5 +164,13 @@ function deriveKeys(path, wifsByPath) {
   return newKeys
 }
 
+/**
+  @private privateToPublic
 
+  method of https://github.com/EOSIO/eosjs-ecc#privatetopublic
 
+  @return {String} EOSKey
+*/
+function privateToPublic(wif) {
+  return PrivateKey.privateToPublic(wif)
+}
