@@ -4,6 +4,7 @@ const assert = require('assert')
 
 const {PrivateKey} = require('eosjs-ecc')
 const validate = require('./validate')
+const ecc = require('eosjs-ecc')
 
 module.exports = {
   generateMasterKeys,
@@ -172,5 +173,5 @@ function deriveKeys(path, wifsByPath) {
   @return {String} EOSKey
 */
 function privateToPublic(wif) {
-  return PrivateKey.privateToPublic(wif)
+  return ecc.privateToPublic(wif)
 }
