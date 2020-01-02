@@ -71,9 +71,9 @@ non-canonical path match.  Uri paths should be canonical.</li>
 </dd>
 <dt><a href="#uriMatchers">uriMatchers</a> : <code><a href="#uriMatcher">uriMatcher</a></code> | <code><a href="#uriMatcher">Array.&lt;uriMatcher&gt;</a></code></dt>
 <dd></dd>
-<dt><a href="#uriRule">uriRule</a> : <code>Object.&lt;keyPathMatcher, uriMatchers&gt;</code></dt>
+<dt><a href="#uriRule">uriRule</a> : <code>[ &#x27;Object&#x27; ].&lt;keyPathMatcher, uriMatchers&gt;</code></dt>
 <dd></dd>
-<dt><a href="#uriRules">uriRules</a> : <code><a href="#uriRule">Object.&lt;uriRule&gt;</a></code></dt>
+<dt><a href="#uriRules">uriRules</a> : <code><a href="#uriRule">[ &#x27;Object&#x27; ].&lt;uriRule&gt;</a></code></dt>
 <dd><p>Define rules that say which private keys may exist within given locations
   of the application.  If a rule is not found or does not match, the keystore
   will remove the key.  The UI can prompt the user to obtain the needed key
@@ -98,15 +98,15 @@ non-canonical path match.  Uri paths should be canonical.</li>
             * [~deriveKeys(params)](#module_Keystore..Keystore..deriveKeys)
             * [~getKeyPaths()](#module_Keystore..Keystore..getKeyPaths) ⇒ <code>object</code>
             * [~getPublicKey(path)](#module_Keystore..Keystore..getPublicKey) ⇒ [<code>pubkey</code>](#pubkey)
-            * [~getPublicKeys([keyPathMatcher])](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
+            * [~getPublicKeys([keyPathMatcher])](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>[ &#x27;Array&#x27; ].&lt;pubkey&gt;</code>](#pubkey)
             * [~getPrivateKey(path)](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
-            * [~getPrivateKeys([keyPathMatcher], [pubkeys])](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
-            * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
-            * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret) ⇒ <code>Promise.&lt;oneTimeSignatures&gt;</code>
+            * [~getPrivateKeys([keyPathMatcher], [pubkeys])](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>[ &#x27;Array&#x27; ].&lt;wif&gt;</code>](#wif)
+            * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>[ &#x27;Array&#x27; ].&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
+            * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret) ⇒ <code>[ &#x27;Promise&#x27; ].&lt;oneTimeSignatures&gt;</code>
             * [~logout()](#module_Keystore..Keystore..logout)
             * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
             * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
-            * [~keyProvider(param)](#module_Keystore..Keystore..keyProvider) ⇒ <code>Array.&lt;(pubkey\|wif)&gt;</code>
+            * [~keyProvider(param)](#module_Keystore..Keystore..keyProvider) ⇒ <code>[ &#x27;Array&#x27; ].&lt;(pubkey\|wif)&gt;</code>
     * [~oneTimeSignatures](#module_Keystore..oneTimeSignatures) : <code>object</code>
 
 <a name="module_Keystore..Keystore"></a>
@@ -156,15 +156,15 @@ config = {
         * [~deriveKeys(params)](#module_Keystore..Keystore..deriveKeys)
         * [~getKeyPaths()](#module_Keystore..Keystore..getKeyPaths) ⇒ <code>object</code>
         * [~getPublicKey(path)](#module_Keystore..Keystore..getPublicKey) ⇒ [<code>pubkey</code>](#pubkey)
-        * [~getPublicKeys([keyPathMatcher])](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
+        * [~getPublicKeys([keyPathMatcher])](#module_Keystore..Keystore..getPublicKeys) ⇒ [<code>[ &#x27;Array&#x27; ].&lt;pubkey&gt;</code>](#pubkey)
         * [~getPrivateKey(path)](#module_Keystore..Keystore..getPrivateKey) ⇒ [<code>wif</code>](#wif)
-        * [~getPrivateKeys([keyPathMatcher], [pubkeys])](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
-        * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
-        * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret) ⇒ <code>Promise.&lt;oneTimeSignatures&gt;</code>
+        * [~getPrivateKeys([keyPathMatcher], [pubkeys])](#module_Keystore..Keystore..getPrivateKeys) ⇒ [<code>[ &#x27;Array&#x27; ].&lt;wif&gt;</code>](#wif)
+        * [~getKeys(keyPathMatcher)](#module_Keystore..Keystore..getKeys) ⇒ [<code>[ &#x27;Array&#x27; ].&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
+        * [~signSharedSecret(otherPubkey, keyPathMatcher)](#module_Keystore..Keystore..signSharedSecret) ⇒ <code>[ &#x27;Promise&#x27; ].&lt;oneTimeSignatures&gt;</code>
         * [~logout()](#module_Keystore..Keystore..logout)
         * [~timeUntilExpire()](#module_Keystore..Keystore..timeUntilExpire) ⇒ <code>number</code>
         * [~keepAlive()](#module_Keystore..Keystore..keepAlive)
-        * [~keyProvider(param)](#module_Keystore..Keystore..keyProvider) ⇒ <code>Array.&lt;(pubkey\|wif)&gt;</code>
+        * [~keyProvider(param)](#module_Keystore..Keystore..keyProvider) ⇒ <code>[ &#x27;Array&#x27; ].&lt;(pubkey\|wif)&gt;</code>
 
 <a name="module_Keystore..Keystore.wipeAll"></a>
 
@@ -189,7 +189,7 @@ Login or derive and save private keys.  This may be called from a login
 | --- | --- | --- |
 | params | <code>object</code> |  |
 | params.parent | [<code>parentPrivateKey</code>](#parentPrivateKey) | Master password (masterPrivateKey),     active, owner, or other permission key. |
-| [params.saveKeyMatches] | [<code>Array.&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These private     keys will be saved to disk. (example: `active`). |
+| [params.saveKeyMatches] | [<code>[ &#x27;Array&#x27; ].&lt;keyPathMatcher&gt;</code>](#keyPathMatcher) | These private     keys will be saved to disk. (example: `active`). |
 | [params.accountPermissions] | [<code>accountPermissions</code>](#accountPermissions) | Permissions object     from Eos blockchain via get_account.  This is used to validate the parent     and derive additional permission keys.  This allows this keystore to detect     incorrect passwords early before trying to sign a transaction.     See Chain API `get_account => account.permissions`. |
 
 <a name="module_Keystore..Keystore..getKeyPaths"></a>
@@ -214,11 +214,11 @@ Fetch or derive a public key.
 
 <a name="module_Keystore..Keystore..getPublicKeys"></a>
 
-#### Keystore~getPublicKeys([keyPathMatcher]) ⇒ [<code>Array.&lt;pubkey&gt;</code>](#pubkey)
+#### Keystore~getPublicKeys([keyPathMatcher]) ⇒ [<code>[ &#x27;Array&#x27; ].&lt;pubkey&gt;</code>](#pubkey)
 Return public keys for a path or path matcher.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
-**Returns**: [<code>Array.&lt;pubkey&gt;</code>](#pubkey) - public keys or empty array  
+**Returns**: [<code>[ &#x27;Array&#x27; ].&lt;pubkey&gt;</code>](#pubkey) - public keys or empty array  
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -238,13 +238,13 @@ Fetch or derive a private key.
 
 <a name="module_Keystore..Keystore..getPrivateKeys"></a>
 
-#### Keystore~getPrivateKeys([keyPathMatcher], [pubkeys]) ⇒ [<code>Array.&lt;wif&gt;</code>](#wif)
+#### Keystore~getPrivateKeys([keyPathMatcher], [pubkeys]) ⇒ [<code>[ &#x27;Array&#x27; ].&lt;wif&gt;</code>](#wif)
 Return private keys for a path matcher or for a list of public keys.  If a
     list of public keys is provided they will be validated ensuring they all
     have private keys to return.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
-**Returns**: [<code>Array.&lt;wif&gt;</code>](#wif) - wifs or empty array  
+**Returns**: [<code>[ &#x27;Array&#x27; ].&lt;wif&gt;</code>](#wif) - wifs or empty array  
 **Throws**:
 
 - <code>key.pubkey</code> Error `login with your $ key`
@@ -254,15 +254,15 @@ Return private keys for a path matcher or for a list of public keys.  If a
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | [keyPathMatcher] | [<code>keyPathMatcher</code>](#keyPathMatcher) | <code>&#x27;**&#x27;</code> | default is to match all |
-| [pubkeys] | [<code>Array.&lt;pubkey&gt;</code>](#pubkey) | <code></code> | if specified, filter and require all |
+| [pubkeys] | [<code>[ &#x27;Array&#x27; ].&lt;pubkey&gt;</code>](#pubkey) | <code></code> | if specified, filter and require all |
 
 <a name="module_Keystore..Keystore..getKeys"></a>
 
-#### Keystore~getKeys(keyPathMatcher) ⇒ [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
+#### Keystore~getKeys(keyPathMatcher) ⇒ [<code>[ &#x27;Array&#x27; ].&lt;keyPathPrivate&gt;</code>](#keyPathPrivate)
 Fetch or derive a key pairs.
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
-**Returns**: [<code>Array.&lt;keyPathPrivate&gt;</code>](#keyPathPrivate) - {path, pubkey, deny, wif} or empty array.
+**Returns**: [<code>[ &#x27;Array&#x27; ].&lt;keyPathPrivate&gt;</code>](#keyPathPrivate) - {path, pubkey, deny, wif} or empty array.
     Based on the Uri rules and current location, the deny could be set to true
     and the wif will be null.  
 
@@ -272,7 +272,7 @@ Fetch or derive a key pairs.
 
 <a name="module_Keystore..Keystore..signSharedSecret"></a>
 
-#### Keystore~signSharedSecret(otherPubkey, keyPathMatcher) ⇒ <code>Promise.&lt;oneTimeSignatures&gt;</code>
+#### Keystore~signSharedSecret(otherPubkey, keyPathMatcher) ⇒ <code>[ &#x27;Promise&#x27; ].&lt;oneTimeSignatures&gt;</code>
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 
 | Param | Type | Default |
@@ -303,7 +303,7 @@ Keep alive (prevent expiration).  Called automatically if Uri navigation
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
 <a name="module_Keystore..Keystore..keyProvider"></a>
 
-#### Keystore~keyProvider(param) ⇒ <code>Array.&lt;(pubkey\|wif)&gt;</code>
+#### Keystore~keyProvider(param) ⇒ <code>[ &#x27;Array&#x27; ].&lt;(pubkey\|wif)&gt;</code>
 Integration for 'eosjs' ..
 
     Call keyProvider with no parameters or with a specific keyPathMatcher
@@ -316,7 +316,7 @@ Integration for 'eosjs' ..
     private keys returned (or an error if any are missing).
 
 **Kind**: inner method of [<code>Keystore</code>](#module_Keystore..Keystore)  
-**Returns**: <code>Array.&lt;(pubkey\|wif)&gt;</code> - available pubkeys in the keystore or matching
+**Returns**: <code>[ &#x27;Array&#x27; ].&lt;(pubkey\|wif)&gt;</code> - available pubkeys in the keystore or matching
     wif private keys for the provided pubkeys argument (also filtered using
     keyPathMatcher).  
 **Throws**:
@@ -340,7 +340,7 @@ Integration for 'eosjs' ..
 
 | Name | Type | Description |
 | --- | --- | --- |
-| signatures | <code>Array.&lt;string&gt;</code> | in hex |
+| signatures | <code>[ &#x27;Array&#x27; ].&lt;string&gt;</code> | in hex |
 | oneTimePublic | [<code>pubkey</code>](#pubkey) |  |
 
 <a name="module_Keygen"></a>
@@ -348,12 +348,12 @@ Integration for 'eosjs' ..
 ## Keygen
 
 * [Keygen](#module_Keygen)
-    * [~generateMasterKeys([masterPrivateKey])](#module_Keygen..generateMasterKeys) ⇒ <code>Promise.&lt;object&gt;</code>
-    * [~keyPathAuth](#module_Keygen..keyPathAuth) : <code>Object.&lt;keyPath, auth&gt;</code>
+    * [~generateMasterKeys([masterPrivateKey])](#module_Keygen..generateMasterKeys) ⇒ <code>[ &#x27;Promise&#x27; ].&lt;object&gt;</code>
+    * [~keyPathAuth](#module_Keygen..keyPathAuth) : <code>[ &#x27;Object&#x27; ].&lt;keyPath, auth&gt;</code>
 
 <a name="module_Keygen..generateMasterKeys"></a>
 
-### Keygen~generateMasterKeys([masterPrivateKey]) ⇒ <code>Promise.&lt;object&gt;</code>
+### Keygen~generateMasterKeys([masterPrivateKey]) ⇒ <code>[ &#x27;Promise&#x27; ].&lt;object&gt;</code>
 New accounts will call this to create a new keyset..
 
   A password manager or backup should save (at the very minimum) the returned
@@ -362,7 +362,7 @@ New accounts will call this to create a new keyset..
   in the backup for easy reference.
 
 **Kind**: inner method of [<code>Keygen</code>](#module_Keygen)  
-**Returns**: <code>Promise.&lt;object&gt;</code> - masterKeys  
+**Returns**: <code>[ &#x27;Promise&#x27; ].&lt;object&gt;</code> - masterKeys  
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -378,7 +378,7 @@ masterKeys = {
 ```
 <a name="module_Keygen..keyPathAuth"></a>
 
-### Keygen~keyPathAuth : <code>Object.&lt;keyPath, auth&gt;</code>
+### Keygen~keyPathAuth : <code>[ &#x27;Object&#x27; ].&lt;keyPath, auth&gt;</code>
 **Kind**: inner typedef of [<code>Keygen</code>](#module_Keygen)  
 <a name="pubkey"></a>
 
@@ -581,7 +581,7 @@ function createPathMatcher(path) {
 **Kind**: global typedef  
 <a name="uriRule"></a>
 
-## uriRule : <code>Object.&lt;keyPathMatcher, uriMatchers&gt;</code>
+## uriRule : <code>[ &#x27;Object&#x27; ].&lt;keyPathMatcher, uriMatchers&gt;</code>
 **Kind**: global typedef  
 **Example**  
 ```js
@@ -592,7 +592,7 @@ function createPathMatcher(path) {
 ```
 <a name="uriRules"></a>
 
-## uriRules : [<code>Object.&lt;uriRule&gt;</code>](#uriRule)
+## uriRules : [<code>[ &#x27;Object&#x27; ].&lt;uriRule&gt;</code>](#uriRule)
 Define rules that say which private keys may exist within given locations
   of the application.  If a rule is not found or does not match, the keystore
   will remove the key.  The UI can prompt the user to obtain the needed key

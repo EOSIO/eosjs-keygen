@@ -55,8 +55,8 @@ Use Node v8+ (updates `package-lock.json`)
 ```bash
 git clone https://github.com/EOSIO/eosjs-keygen.git
 cd eosjs-keygen
-npm install
-npm run build
+yarn
+yarn build
 # builds: ./dist/eosjs-keygen.js
 ```
 

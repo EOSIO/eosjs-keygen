@@ -8,14 +8,14 @@
   "scripts": {
     "test": "mocha --exit --use_strict src/*.test.js",
     "coverage": "istanbul cover _mocha -- --exit -R spec src/*.test.js",
-    "coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/.bin/coveralls",
-    "prepublishOnly": "npm run build_lib && npm run prepublishOnly_test && npm run docs",
+    "coveralls": "yarn coverage && cat ./coverage/lcov.info | ./node_modules/.bin/coveralls",
+    "prepublishOnly": "yarn build_lib && yarn prepublishOnly_test && yarn docs",
     "prepublishOnly_test": "mocha --exit --use_strict lib/*.test.js",
-    "build": "npm run docs && npm run build_browser",
+    "build": "yarn docs && yarn build_browser",
     "docs": "jsdoc2md src/keystore.js src/keygen.js src/jsdoc-types.js > API.md",
     "build_lib": "babel src --out-dir lib",
-    "build_browser": "npm run build_lib && mkdir -p dist && browserify -o dist/eosjs-keygen.js -s kos lib/index.js",
-    "build_browser_test": "npm run build_lib && mkdir -p dist && browserify -o dist/mocha-test.js lib/*.test.js"
+    "build_browser": "yarn build_lib && mkdir -p dist && browserify -o dist/eosjs-keygen.js -s kos lib/index.js",
+    "build_browser_test": "yarn build_lib && mkdir -p dist && browserify -o dist/mocha-test.js lib/*.test.js"
   },
   "repository": {
     "type": "git",
@@ -39,14 +39,17 @@
     "coveralls": "^3.0.0",
     "eosjs": "^4.0.2",
     "istanbul": "^1.1.0-alpha.1",
-    "jsdoc-to-markdown": "^3.0.4",
+    "jsdoc-to-markdown": "^5.0.3",
     "mocha": "^5.2.0"
   },
   "dependencies": {
-    "eosjs-ecc": "^4.0.1",
-    "history": "^4.7.2",
-    "localStorage": "^1.0.3",
-    "minimatch": "^3.0.4"
+    "eosjs-ecc": "4.0.7",
+    "history": "4.10.1",
+    "localStorage": "1.0.4",
+    "minimatch": "3.0.4"
+  },
+  "resolutions": {
+    "braces": "^2.3.1"
   },
   "babel": {
     "presets": [
