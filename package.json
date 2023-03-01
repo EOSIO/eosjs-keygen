@@ -40,7 +40,7 @@
     "eosjs": "^4.0.2",
     "istanbul": "^1.1.0-alpha.1",
     "jsdoc-to-markdown": "^3.0.4",
-    "mocha": "^5.2.0"
+    "mocha": "^10.2.0"
   },
   "dependencies": {
     "eosjs-ecc": "^4.0.1",
